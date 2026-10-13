@@ -11,9 +11,7 @@ data class AppointmentEntity(
     val patientEmail: String,
     val patientPhone: String,
     val serviceType: String,
-    val professionalName: String,
     val date: String,
-    val timeSlot: String,
     val isOnline: Boolean,
     val boxNumber: Int? = null,
     val status: String = "Agendada"

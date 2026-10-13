@@ -2,14 +2,10 @@ package com.sanaesencia.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+val Green80 = Color(0xFFA5D6A7)
+val GreenGrey80 = Color(0xFFC8E6C9)
+val Tea80 = Color(0xFFE8F5E9)
 
-/*Light*/
-val light3 = Color(0xFF5FA8D3)
-val Light2 = Color(0xFFBEE9E8)
-val Light1 = Color(0xFFCAE9FF)
-
-
-/*Dark*/
-val Dark1 = Color(0xFF5FA8D3)
-val Dark2 = Color(0xFF62B6CB)
-val Dark3 = Color(0xFF1B4965)
+val Green40 = Color(0xFF2E7D32)
+val GreenGrey40 = Color(0xFF388E3C)
+val Tea40 = Color(0xFF1B5E20)

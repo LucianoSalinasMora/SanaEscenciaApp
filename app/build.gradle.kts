@@ -55,9 +55,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.material.icons.extended)
 
-    // Nav en Compose
-    implementation("androidx.navigation:navigation-compose:2.7.7")
-
     // Room Persistence (Local)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

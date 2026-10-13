@@ -13,13 +13,5 @@ data class BookingFormState(
     val dateError: String? = null,
     val isOnline: Boolean = false,
     val isFormValid: Boolean = false,
-    val isSubmittedSuccessfully: Boolean = false,
-    val patientName: String = "Juan Pérez",
-    val patientEmail: String = "juan.perez@email.com",
-    val patientPhone: String = "+56912345678",
-    val professionalName: String = "",
-    val selectedDateMillis: Long? = null,
-    val dateFormatted: String = "",
-    val timeSlot: String = "",
-
+    val isSubmittedSuccessfully: Boolean = false
 )

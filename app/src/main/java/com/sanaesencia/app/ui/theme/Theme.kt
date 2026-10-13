@@ -6,25 +6,22 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
-private val LightColorScheme = lightColorScheme(
-    primary = light3,
-    secondary = Light2,
-    tertiary = Light1
-)
-
-
 private val DarkColorScheme = darkColorScheme(
-    primary = Dark3,
-    secondary = Dark2,
-    tertiary = Dark1
+    primary = Green80,
+    secondary = GreenGrey80,
+    tertiary = Tea80
 )
 
-
+private val LightColorScheme = lightColorScheme(
+    primary = Green40,
+    secondary = GreenGrey40,
+    tertiary = Tea40
+)
 
 @Composable
 fun SanaesenciaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
