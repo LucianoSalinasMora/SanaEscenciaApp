@@ -17,7 +17,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.data.AppointmentEntity
 import com.sanaesencia.app.viewmodel.BookingViewModel
-
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingScreen(
@@ -33,7 +33,10 @@ fun BookingScreen(
                 title = { Text("Agendamiento de Citas") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

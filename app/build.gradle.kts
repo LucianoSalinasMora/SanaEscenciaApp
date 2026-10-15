@@ -54,6 +54,7 @@ dependencies {
     // ViewModel & Íconos de Material
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.navigation.compose)
 
     // Room Persistence (Local)
     implementation(libs.androidx.room.runtime)

@@ -15,7 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.viewmodel.BookingViewModel
-
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 data class ServiceItem(val name: String, val category: String, val description: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,11 +86,11 @@ fun CatalogScreen(
                         }
                         IconButton(
                             onClick = {
-                                viewModel.onServiceChanged(service.name)
+                                viewModel.onSpecialtySelected(service.name)
                                 onNavigateToBooking()
                             }
                         ) {
-                            Icon(Icons.Default.ArrowForward, contentDescription = "Agendar")
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Agendar")
                         }
                     }
                 }
