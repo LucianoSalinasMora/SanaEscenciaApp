@@ -12,11 +12,13 @@ enum class AppointmentState { PENDIENTE, CONFIRMADA, COMPLETADA, CANCELADA, NO_A
 data class UserEntity(
     @PrimaryKey val run: String, // Usaremos el RUN como ID principal
     val name: String,
-    val phone: String,
+    val email: String = "",
+    val phone: String = "",
     val passwordHash: String,
     val role: UserRole = UserRole.PACIENTE,
-    val securityQuestion: String,
-    val securityAnswer: String
+    val securityQuestion: String = "",
+    val securityAnswer: String = "",
+    val specialty: String = ""
 )
 
 // 3. Modelo de Profesional y Datos Mock

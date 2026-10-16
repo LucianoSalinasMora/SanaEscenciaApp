@@ -18,5 +18,6 @@ data class AppointmentEntity(
     val isOnline: Boolean = false,
     val boxNumber: Int? = null,
     val status: String = "Agendada",
-    val state: String = "PENDIENTE"
+    val state: String = "PENDIENTE",
+    val patientNotes: String = ""
 )

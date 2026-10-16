@@ -1,23 +1,29 @@
 package com.sanaesencia.app.view
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.data.AppointmentEntity
+import com.sanaesencia.app.data.Validators
 import com.sanaesencia.app.data.mockProfessionals
 import com.sanaesencia.app.viewmodel.BookingViewModel
+import com.sanaesencia.app.viewmodel.UserViewModel
 
 @Composable
 fun DashboardScreen(
@@ -72,8 +78,26 @@ fun DashboardScreen(
 }
 
 @Composable
-fun ProfileScreen(viewModel: BookingViewModel) {
-    val appointments by viewModel.appointments.collectAsState()
+fun ProfileScreen(
+    userViewModel: UserViewModel,
+    bookingViewModel: BookingViewModel
+) {
+    val context = LocalContext.current
+    val currentUser by userViewModel.currentUser.collectAsState()
+    val appointments by bookingViewModel.appointments.collectAsState()
+
+    var isEditing by remember { mutableStateOf(false) }
+    var name by remember(currentUser) { mutableStateOf(currentUser?.name ?: "") }
+    var email by remember(currentUser) { mutableStateOf(currentUser?.email ?: "") }
+    var phone by remember(currentUser) { mutableStateOf(currentUser?.phone ?: "") }
+
+    val isNameValid = remember(name) { name.isBlank() || Validators.isValidName(name) }
+    val isEmailValid = remember(email) { email.isBlank() || Validators.isValidEmail(email) }
+    val isPhoneValid = remember(phone) { phone.isBlank() || Validators.isValidPhone(phone) }
+
+    val isFormValid = name.isNotBlank() && isNameValid &&
+            email.isNotBlank() && isEmailValid &&
+            phone.isNotBlank() && isPhoneValid
 
     LazyColumn(
         modifier = Modifier
@@ -82,19 +106,84 @@ fun ProfileScreen(viewModel: BookingViewModel) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Text("Perfil del Paciente", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+            Text("Perfil de Usuario", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
         }
 
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(40.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text("Juan Pérez", style = MaterialTheme.typography.titleMedium)
-                            Text("juan.perez@email.com • +56912345678", style = MaterialTheme.typography.bodySmall)
-                            Text("Rol: Paciente", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(36.dp), tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(currentUser?.name ?: "Usuario", style = MaterialTheme.typography.titleMedium)
+                                Text("RUN: ${currentUser?.run ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
+                                Text("Rol: ${currentUser?.role?.name ?: "PACIENTE"}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                            }
+                        }
+                        IconButton(onClick = { isEditing = !isEditing }) {
+                            Icon(if (isEditing) Icons.Default.Save else Icons.Default.Edit, contentDescription = "Editar Perfil")
+                        }
+                    }
+
+                    HorizontalDivider()
+
+                    if (!isEditing) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("Correo Electrónico: ${currentUser?.email?.ifBlank { "No registrado" }}", style = MaterialTheme.typography.bodyMedium)
+                            Text("Teléfono / WhatsApp: ${currentUser?.phone?.ifBlank { "No registrado" }}", style = MaterialTheme.typography.bodyMedium)
+                            if (!currentUser?.specialty.isNullBraking()) {
+                                Text("Especialidad: ${currentUser?.specialty}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.tertiary)
+                            }
+                        }
+                    } else {
+                        Text("Editar Datos Personales", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text("Nombre Completo") },
+                            isError = !isNameValid,
+                            supportingText = { if (!isNameValid) Text("Mínimo 3 caracteres", color = MaterialTheme.colorScheme.error) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Correo Electrónico") },
+                            isError = !isEmailValid,
+                            supportingText = { if (!isEmailValid) Text("Formato correo inválido (ej. usuario@dominio.com)", color = MaterialTheme.colorScheme.error) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = phone,
+                            onValueChange = { phone = it },
+                            label = { Text("Teléfono de Contacto") },
+                            isError = !isPhoneValid,
+                            supportingText = { if (!isPhoneValid) Text("Número inválido (8 a 12 dígitos)", color = MaterialTheme.colorScheme.error) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Button(
+                            onClick = {
+                                userViewModel.updateUserProfile(name.trim(), email.trim(), phone.trim()) {
+                                    isEditing = false
+                                    Toast.makeText(context, "Perfil actualizado exitosamente", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            enabled = isFormValid,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Save, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Guardar Cambios")
                         }
                     }
                 }
@@ -116,6 +205,8 @@ fun ProfileScreen(viewModel: BookingViewModel) {
         }
     }
 }
+
+private fun String?.isNullBraking(): Boolean = this.isNullOrBlank()
 
 @Composable
 fun AppointmentCard(appointment: AppointmentEntity) {
@@ -162,6 +253,15 @@ fun AppointmentCard(appointment: AppointmentEntity) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary
             )
+
+            if (appointment.patientNotes.isNotBlank()) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.AutoMirrored.Filled.Notes, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.tertiary)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Nota/Motivo: ${appointment.patientNotes}", style = MaterialTheme.typography.bodySmall)
+                }
+            }
         }
     }
 }

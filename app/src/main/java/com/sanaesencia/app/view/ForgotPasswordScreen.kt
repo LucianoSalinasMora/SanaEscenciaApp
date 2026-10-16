@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -72,7 +73,11 @@ fun ForgotPasswordScreen(
 
             // --- PASO 2: Pregunta de Seguridad ---
             if (step >= 2 && fetchedUser != null) {
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    thickness = DividerDefaults.Thickness,
+                    color = DividerDefaults.color
+                )
                 Text("Pregunta de seguridad:", color = MaterialTheme.colorScheme.primary)
                 Text(fetchedUser!!.securityQuestion, style = MaterialTheme.typography.bodyLarge)
 
@@ -102,7 +107,11 @@ fun ForgotPasswordScreen(
 
             // --- PASO 3: Nueva Contraseña ---
             if (step == 3) {
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    thickness = DividerDefaults.Thickness,
+                    color = DividerDefaults.color
+                )
                 OutlinedTextField(
                     value = newPassword,
                     onValueChange = { newPassword = it },

@@ -2,9 +2,12 @@ package com.sanaesencia.app.data
 
 object Validators {
 
-    // Validador de RUN Chileno (Módulo 11)
+    // Validador de RUN Chileno (Módulo 11) o "admin" para cuenta de administración
     fun isValidRUN(run: String): Boolean {
-        val cleanRun = run.replace(".", "").replace("-", "").uppercase()
+        val trimmed = run.trim()
+        if (trimmed.equals("admin", ignoreCase = true)) return true
+
+        val cleanRun = trimmed.replace(".", "").replace("-", "").uppercase()
         if (cleanRun.length < 8) return false
 
         val rut = cleanRun.substring(0, cleanRun.length - 1)
@@ -30,8 +33,31 @@ object Validators {
         }
     }
 
-    // Validador simple de teléfono
+    // Validador de Correo Electrónico con expresión regular estándar
+    fun isValidEmail(email: String): Boolean {
+        val trimmed = email.trim()
+        val emailRegex = "^[A-Za-z0-9+_.-]+@(.+)\\.[A-Za-z]{2,}\$".toRegex()
+        return trimmed.isNotBlank() && trimmed.matches(emailRegex)
+    }
+
+    // Validador de Teléfono (sólo dígitos, opcional signo +, longitud 8 a 12 dígitos)
     fun isValidPhone(phone: String): Boolean {
-        return phone.matches(Regex("^[+]?[0-9]{8,12}\$"))
+        val cleanPhone = phone.trim().replace(" ", "").replace("-", "")
+        return cleanPhone.matches(Regex("^[+]?[0-9]{8,12}\$"))
+    }
+
+    // Validador de Nombre completo (mínimo 3 caracteres no vacíos)
+    fun isValidName(name: String): Boolean {
+        return name.trim().length >= 3
+    }
+
+    // Validador de Contraseña (mínimo 4 caracteres)
+    fun isValidPassword(password: String): Boolean {
+        return password.trim().length >= 4
+    }
+
+    // Validador de Especialidad (mínimo 3 caracteres)
+    fun isValidSpecialty(specialty: String): Boolean {
+        return specialty.trim().length >= 3
     }
 }

@@ -1,17 +1,19 @@
 package com.sanaesencia.app.view
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.sanaesencia.app.data.UserRole
-import com.sanaesencia.app.viewmodel.UserViewModel
-import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
 import com.sanaesencia.app.R
+import com.sanaesencia.app.data.UserRole
+import com.sanaesencia.app.data.Validators
+import com.sanaesencia.app.viewmodel.UserViewModel
+
 @Composable
 fun LoginScreen(
     viewModel: UserViewModel,
@@ -23,6 +25,10 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
 
+    val isRunValid = remember(run) { run.isBlank() || Validators.isValidRUN(run) }
+    val isPasswordValid = remember(password) { password.isBlank() || Validators.isValidPassword(password) }
+    val isFormValid = run.isNotBlank() && isRunValid && password.isNotBlank() && isPasswordValid
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -31,13 +37,18 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            painter = painterResource(id = R.drawable.logo), // Nombre de tu archivo sin extensión
+            painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo Sanaesencia",
             modifier = Modifier
-                .size(150.dp) // Ajusta el ancho y alto según lo necesites
+                .size(150.dp)
                 .padding(bottom = 16.dp)
         )
-        Spacer(modifier = Modifier.height(32.dp))
+        Text(
+            text = "Bienvenido a Sanaesencia",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(24.dp))
 
         OutlinedTextField(
             value = run,
@@ -45,10 +56,16 @@ fun LoginScreen(
                 run = it
                 showError = false
             },
-            label = { Text("RUN") },
+            label = { Text("RUN / Usuario") },
+            isError = !isRunValid,
+            supportingText = {
+                if (!isRunValid) {
+                    Text("RUN o Usuario inválido", color = MaterialTheme.colorScheme.error)
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = password,
@@ -58,13 +75,20 @@ fun LoginScreen(
             },
             label = { Text("Contraseña") },
             visualTransformation = PasswordVisualTransformation(),
+            isError = !isPasswordValid,
+            supportingText = {
+                if (!isPasswordValid) {
+                    Text("Mínimo 4 caracteres", color = MaterialTheme.colorScheme.error)
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
 
         if (showError) {
             Text(
-                text = "Credenciales incorrectas",
+                text = "Credenciales incorrectas. Verifique su RUN/Usuario y contraseña.",
                 color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
@@ -81,7 +105,10 @@ fun LoginScreen(
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth().height(50.dp)
+            enabled = isFormValid,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
         ) {
             Text("Ingresar")
         }
@@ -91,7 +118,7 @@ fun LoginScreen(
             Text("¿Olvidaste tu contraseña?")
         }
         TextButton(onClick = onNavigateToSignUp) {
-            Text("¿No tienes cuenta? Regístrate aquí")
+            Text("¿No tienes cuenta? Regístrate como Paciente")
         }
     }
 }

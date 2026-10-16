@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanaesencia.app.data.AppointmentEntity
 import com.sanaesencia.app.data.AppointmentRepository
+import com.sanaesencia.app.data.UserEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,57 +25,58 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
             initialValue = emptyList()
         )
 
-    fun onNameChanged(newValue: String) {
-        val error = if (newValue.isBlank()) "El nombre es obligatorio" else null
-        _uiState.update { it.copy(name = newValue, nameError = error) }
+    fun loadPatientData(patient: UserEntity?) {
+        if (patient != null) {
+            _uiState.update {
+                it.copy(
+                    patientName = patient.name,
+                    patientEmail = patient.email,
+                    patientPhone = patient.phone,
+                    patientRun = patient.run
+                )
+            }
+            validateForm()
+        }
+    }
+
+    fun onAreaChanged(area: String) {
+        _uiState.update { it.copy(serviceType = area) }
         validateForm()
     }
 
-    fun onEmailChanged(newValue: String) {
-        val emailRegex = "^[A-Za-z0-9+_.-]+@(.+)\$".toRegex()
-        val error = when {
-            newValue.isBlank() -> "El correo es obligatorio"
-            !newValue.matches(emailRegex) -> "Formato de correo inválido"
-            else -> null
-        }
-        _uiState.update { it.copy(email = newValue, emailError = error) }
-        validateForm()
+    fun onSpecialtySelected(service: String) {
+        onAreaChanged(service)
     }
 
-    fun onPhoneChanged(newValue: String) {
-        val error = when {
-            newValue.isBlank() -> "El teléfono es obligatorio"
-            newValue.length < 9 -> "Debe tener al menos 9 dígitos"
-            else -> null
-        }
-        _uiState.update { it.copy(phone = newValue, phoneError = error) }
+    fun onProfessionalChanged(professional: String) {
+        _uiState.update { it.copy(professionalName = professional) }
         validateForm()
     }
 
     fun onDateChanged(newValue: String) {
-        val error = if (newValue.isBlank()) "Seleccione una fecha" else null
-        _uiState.update { it.copy(date = newValue, dateError = error) }
+        _uiState.update { it.copy(date = newValue) }
         validateForm()
+    }
+
+    fun onTimeSlotChanged(newValue: String) {
+        _uiState.update { it.copy(timeSlot = newValue) }
+        validateForm()
+    }
+
+    fun onNotesChanged(newValue: String) {
+        _uiState.update { it.copy(notes = newValue) }
     }
 
     fun onModeChanged(isOnline: Boolean) {
         _uiState.update { it.copy(isOnline = isOnline) }
     }
 
-    fun onServiceChanged(service: String) {
-        _uiState.update { it.copy(serviceType = service) }
-    }
-
-    fun onSpecialtySelected(service: String) {
-        onServiceChanged(service)
-    }
-
     private fun validateForm() {
         val state = _uiState.value
-        val isValid = state.name.isNotBlank() && state.nameError == null &&
-                state.email.isNotBlank() && state.emailError == null &&
-                state.phone.isNotBlank() && state.phoneError == null &&
-                state.date.isNotBlank() && state.dateError == null
+        val isValid = state.serviceType.isNotBlank() &&
+                state.professionalName.isNotBlank() &&
+                state.date.isNotBlank() &&
+                state.timeSlot.isNotBlank()
 
         _uiState.update { it.copy(isFormValid = isValid) }
     }
@@ -85,13 +87,17 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
         viewModelScope.launch {
             val state = _uiState.value
             val entity = AppointmentEntity(
-                patientName = state.name,
-                patientEmail = state.email,
-                patientPhone = state.phone,
+                patientName = state.patientName.ifBlank { "Paciente Registrado" },
+                patientEmail = state.patientEmail,
+                patientPhone = state.patientPhone,
+                patientRun = state.patientRun,
                 serviceType = state.serviceType,
+                professionalName = state.professionalName,
                 date = state.date,
+                timeSlot = state.timeSlot,
                 isOnline = state.isOnline,
-                boxNumber = if (state.isOnline) null else (1..8).random()
+                boxNumber = if (state.isOnline) null else (1..8).random(),
+                patientNotes = state.notes
             )
 
             val success = repository.saveAppointment(entity)

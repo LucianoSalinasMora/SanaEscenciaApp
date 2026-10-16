@@ -107,6 +107,7 @@ class MainActivity : ComponentActivity() {
                             MainScreen(
                                 parentNavController = navController,
                                 userRole = role,
+                                userViewModel = userViewModel,
                                 bookingViewModel = bookingViewModel,
                                 onLogout = {
                                     navController.navigate(Screen.Login.route) {
@@ -119,7 +120,8 @@ class MainActivity : ComponentActivity() {
                         // --- PANTALLA DE AGENDAR CITA ---
                         composable(Screen.Booking.route) {
                             BookingScreen(
-                                viewModel = bookingViewModel,
+                                userViewModel = userViewModel,
+                                bookingViewModel = bookingViewModel,
                                 onBookingSuccess = { appointment ->
                                     notificationHelper.sendBookingNotification(
                                         serviceName = "Cita Agendada",

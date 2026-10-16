@@ -1,5 +1,7 @@
 package com.sanaesencia.app.view
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -9,26 +11,27 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.sanaesencia.app.R
 import com.sanaesencia.app.Screen
 import com.sanaesencia.app.data.UserRole
 import com.sanaesencia.app.viewmodel.BookingViewModel
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.height
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import com.sanaesencia.app.R
+import com.sanaesencia.app.viewmodel.UserViewModel
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     parentNavController: NavHostController,
     userRole: String, // Recibe "PACIENTE", "PROFESIONAL" o "ADMIN"
+    userViewModel: UserViewModel,
     bookingViewModel: BookingViewModel,
-    onLogout: () -> Unit // Nueva acción para cerrar sesión
+    onLogout: () -> Unit // Acción para cerrar sesión
 ) {
     val bottomNavController = rememberNavController()
 
@@ -61,17 +64,19 @@ fun MainScreen(
             TopAppBar(
                 title = {
                     Image(
-                        painter = painterResource(id = R.drawable.logo), // Nombre de tu imagen en res/drawable
+                        painter = painterResource(id = R.drawable.logo),
                         contentDescription = "Logo Sanaesencia",
-                        modifier = Modifier
-                            .height(36.dp) // Ajusta la altura para que encaje bien en la barra superior
+                        modifier = Modifier.height(36.dp)
                     )
                 },
                 actions = {
-                    IconButton(onClick = { /* Lógica para ver notificaciones push/alertas simuladas */ }) {
+                    IconButton(onClick = { /* Lógica para notificaciones push */ }) {
                         Icon(Icons.Default.Notifications, contentDescription = "Notificaciones")
                     }
-                    IconButton(onClick = onLogout) {
+                    IconButton(onClick = {
+                        userViewModel.logout()
+                        onLogout()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar Sesión")
                     }
                 },
@@ -90,7 +95,6 @@ fun MainScreen(
                         icon = { Icon(screen.icon!!, contentDescription = screen.title) },
                         label = { Text(screen.title) },
                         selected = currentRoute == screen.route,
-                        // Configuración para que el color seleccionado sea permanente (Requisito de Navbar)
                         colors = NavigationBarItemDefaults.colors(
                             indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
                             selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -109,7 +113,6 @@ fun MainScreen(
         },
         floatingActionButtonPosition = FabPosition.End,
         floatingActionButton = {
-            // 3. Lógica del Botón Flotante (FAB)
             if (userRole == UserRole.PACIENTE.name) {
                 FloatingActionButton(
                     onClick = { parentNavController.navigate(Screen.Booking.route) },
@@ -119,13 +122,12 @@ fun MainScreen(
                 }
             } else if (userRole == UserRole.PROFESIONAL.name) {
                 FloatingActionButton(
-                    onClick = { /* Lógica para que el profesional agende una cita a un paciente asignado */ },
+                    onClick = { /* Agendar a paciente asignado */ },
                     containerColor = MaterialTheme.colorScheme.tertiary
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Agendar a Paciente")
                 }
             }
-            // El ADMIN no tiene FAB de agendamiento global aquí
         }
     ) { paddingValues ->
         NavHost(
@@ -133,22 +135,22 @@ fun MainScreen(
             startDestination = Screen.Inicio.route,
             modifier = Modifier.padding(paddingValues)
         ) {
-            // Vistas compartidas (Su contenido variará internamente según el rol en el ViewModel)
+            // Vistas compartidas
             composable(Screen.Inicio.route) { DashboardScreen(viewModel = bookingViewModel, role = userRole) }
-            composable(Screen.Profile.route) { ProfileScreen(viewModel = bookingViewModel) }
-            composable(Screen.About.route) { AboutScreen(role = userRole) } // Muestra reseñas, Admin puede borrar
+            composable(Screen.Profile.route) { ProfileScreen(userViewModel = userViewModel, bookingViewModel = bookingViewModel) }
+            composable(Screen.About.route) { AboutScreen(role = userRole) }
 
             // Vistas de Paciente
             composable(Screen.Catalog.route) { CatalogTabScreen() }
 
             // Vistas de Profesional
-            composable(Screen.MyPatients.route) { /* Crear MyPatientsScreen() */ }
-            composable(Screen.MySchedule.route) { /* Crear MyScheduleScreen() */ }
+            composable(Screen.MyPatients.route) { MyPatientsScreen(bookingViewModel = bookingViewModel) }
+            composable(Screen.MySchedule.route) { /* MyScheduleScreen() */ }
 
             // Vistas de Administrador
-            composable(Screen.ManageProducts.route) { /* Crear ManageProductsScreen() */ }
-            composable(Screen.ManageSchedule.route) { /* Crear ManageScheduleScreen() */ }
-            composable(Screen.AdminProfessionals.route) { AdminProfessionalsScreen() }
+            composable(Screen.ManageProducts.route) { /* ManageProductsScreen() */ }
+            composable(Screen.ManageSchedule.route) { /* ManageScheduleScreen() */ }
+            composable(Screen.AdminProfessionals.route) { AdminProfessionalsScreen(viewModel = userViewModel) }
         }
     }
 }
