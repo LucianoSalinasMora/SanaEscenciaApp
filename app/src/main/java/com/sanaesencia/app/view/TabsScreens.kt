@@ -20,7 +20,10 @@ import com.sanaesencia.app.data.mockProfessionals
 import com.sanaesencia.app.viewmodel.BookingViewModel
 
 @Composable
-fun DashboardScreen(viewModel: BookingViewModel) {
+fun DashboardScreen(
+    viewModel: BookingViewModel,
+    role: String = "PACIENTE"
+) {
     val appointments by viewModel.appointments.collectAsState()
 
     LazyColumn(
@@ -163,7 +166,25 @@ fun AppointmentCard(appointment: AppointmentEntity) {
     }
 }
 
-// Mantenemos las vistas estáticas del resto de pestañas...
-@Composable fun CatalogTabScreen() { Column(modifier = Modifier.fillMaxSize().padding(16.dp)) { Text("Catálogo de Servicios", style = MaterialTheme.typography.headlineMedium) } }
-@Composable fun ProfessionalsScreen() { LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) { items(mockProfessionals) { Text(it.name) } } }
-@Composable fun AboutScreen() { Column(modifier = Modifier.fillMaxSize().padding(16.dp)) { Text("Nosotros", style = MaterialTheme.typography.headlineMedium) } }
+@Composable
+fun CatalogTabScreen() {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("Catálogo de Servicios", style = MaterialTheme.typography.headlineMedium)
+    }
+}
+
+@Composable
+fun ProfessionalsScreen() {
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        items(mockProfessionals) { pro ->
+            Text(pro.name)
+        }
+    }
+}
+
+@Composable
+fun AboutScreen(role: String = "PACIENTE") {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("Nosotros", style = MaterialTheme.typography.headlineMedium)
+    }
+}

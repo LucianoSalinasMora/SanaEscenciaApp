@@ -7,23 +7,33 @@ import androidx.compose.ui.graphics.vector.ImageVector
 sealed class Screen(
     val route: String,
     val title: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector? = null
+    val icon: ImageVector? = null
 ) {
+    // Autenticación
     object Login : Screen("login", "Login")
     object SignUp : Screen("signup", "Registro")
+    object ForgotPassword : Screen("forgot_password", "Recuperar") // NUEVO
 
-    // Agrega el bloque { fun createRoute(...) } aquí:
     object Main : Screen("main/{role}", "Main") {
         fun createRoute(role: String) = "main/$role"
     }
 
     object Booking : Screen("booking", "Agendar Cita")
 
-    // Tabs de la Navbar
-    object Inicio : Screen("inicio", "Inicio", androidx.compose.material.icons.Icons.Default.Home)
-    object Catalog : Screen("catalog", "Servicios", androidx.compose.material.icons.Icons.Default.Spa)
-    object Professionals : Screen("professionals", "Pros", androidx.compose.material.icons.Icons.Default.MedicalServices)
-    object About : Screen("about", "Nosotros", androidx.compose.material.icons.Icons.Default.Info)
-    object Profile : Screen("profile", "Perfil", androidx.compose.material.icons.Icons.Default.Person)
-    object AdminMenu : Screen("admin_menu", "Gestión", androidx.compose.material.icons.Icons.Default.ManageAccounts)
+    // Tabs Generales
+    object Inicio : Screen("inicio", "Inicio", Icons.Default.Home)
+    object Profile : Screen("profile", "Perfil", Icons.Default.Person)
+
+    // Tabs de Paciente
+    object Catalog : Screen("catalog", "Servicios", Icons.Default.Spa)
+    object About : Screen("about", "Nosotros", Icons.Default.Info)
+
+    // Tabs de Profesional (NUEVOS)
+    object MyPatients : Screen("my_patients", "Pacientes", Icons.Default.People)
+    object MySchedule : Screen("my_schedule", "Turnos", Icons.Default.CalendarMonth)
+
+    // Tabs de Administrador (NUEVOS/MODIFICADOS)
+    object ManageProducts : Screen("manage_products", "Productos", Icons.Default.Inventory)
+    object ManageSchedule : Screen("manage_schedule", "Citas", Icons.Default.EventNote)
+    object AdminProfessionals : Screen("admin_professionals", "Gestión", Icons.Default.ManageAccounts)
 }

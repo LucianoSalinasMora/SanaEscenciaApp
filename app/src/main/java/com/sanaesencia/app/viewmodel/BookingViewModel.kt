@@ -1,14 +1,14 @@
 package com.sanaesencia.app.viewmodel
 
-
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.sanaesencia.app.data.AppointmentEntity
 import com.sanaesencia.app.data.AppointmentRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -16,6 +16,13 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
 
     private val _uiState = MutableStateFlow(BookingFormState())
     val uiState: StateFlow<BookingFormState> = _uiState.asStateFlow()
+
+    val appointments: StateFlow<List<AppointmentEntity>> = repository.allAppointments
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     fun onNameChanged(newValue: String) {
         val error = if (newValue.isBlank()) "El nombre es obligatorio" else null
@@ -58,6 +65,10 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
         _uiState.update { it.copy(serviceType = service) }
     }
 
+    fun onSpecialtySelected(service: String) {
+        onServiceChanged(service)
+    }
+
     private fun validateForm() {
         val state = _uiState.value
         val isValid = state.name.isNotBlank() && state.nameError == null &&
@@ -91,4 +102,3 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
         }
     }
 }
-

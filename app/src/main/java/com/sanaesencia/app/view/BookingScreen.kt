@@ -1,12 +1,13 @@
 package com.sanaesencia.app.view
 
-
 import androidx.compose.animation.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,7 +18,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.data.AppointmentEntity
 import com.sanaesencia.app.viewmodel.BookingViewModel
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.Date
+import java.util.Locale
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingScreen(
@@ -26,6 +33,9 @@ fun BookingScreen(
     onBack: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+
+    // 1. Estado para mostrar u ocultar el calendario
+    var showDatePicker by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -117,14 +127,25 @@ fun BookingScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // 2. Campo de fecha modificado para abrir el calendario
             OutlinedTextField(
                 value = state.date,
-                onValueChange = { viewModel.onDateChanged(it) },
-                label = { Text("Fecha de Atención (AAAA-MM-DD)") },
+                onValueChange = { }, // Ya no se escribe a mano
+                readOnly = true,     // Bloqueado para escritura
+                label = { Text("Fecha de Atención") },
                 leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null) },
                 isError = state.dateError != null,
                 supportingText = { state.dateError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showDatePicker = true }, // Abre el diálogo al tocar
+                enabled = false, // Lo desactivamos visualmente para que actúe como botón
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             )
 
             AnimatedVisibility(
@@ -162,6 +183,54 @@ fun BookingScreen(
             ) {
                 Text("Confirmar y Guardar Cita")
             }
+        }
+    }
+
+    // 3. Componente del Calendario (DatePickerDialog)
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            selectableDates = DateValidators.weekdayOnlyValidator
+        )
+
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        // Convierte los milisegundos del calendario a formato AAAA-MM-DD
+                        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        val formattedDate = formatter.format(Date(millis))
+                        viewModel.onDateChanged(formattedDate)
+                    }
+                    showDatePicker = false
+                }) {
+                    Text("Aceptar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}
+
+// 4. Objeto validador de fechas (Días hábiles y fechas futuras)
+@OptIn(ExperimentalMaterial3Api::class)
+object DateValidators {
+    val weekdayOnlyValidator = object : SelectableDates {
+        override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+            val date = Instant.ofEpochMilli(utcTimeMillis)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate()
+
+            // Permite el día de hoy, rechaza el pasado
+            val isPast = date.isBefore(LocalDate.now())
+            // Bloquea sábados (6) y domingos (7)
+            val isWeekend = date.dayOfWeek.value == 6 || date.dayOfWeek.value == 7
+
+            return !isPast && !isWeekend
         }
     }
 }

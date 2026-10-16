@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.sanaesencia.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.sanaesencia.app"

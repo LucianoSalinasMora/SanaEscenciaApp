@@ -7,17 +7,26 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.sanaesencia.app.data.AppDatabase
 import com.sanaesencia.app.data.AppointmentRepository
 import com.sanaesencia.app.data.NotificationHelper
+import com.sanaesencia.app.data.UserRepository
+import com.sanaesencia.app.data.UserRole
 import com.sanaesencia.app.ui.theme.SanaesenciaTheme
 import com.sanaesencia.app.view.BookingScreen
-import com.sanaesencia.app.view.CatalogScreen
+import com.sanaesencia.app.view.ForgotPasswordScreen
+import com.sanaesencia.app.view.LoginScreen
+import com.sanaesencia.app.view.MainScreen
+import com.sanaesencia.app.view.SignUpScreen
 import com.sanaesencia.app.viewmodel.BookingViewModel
 import com.sanaesencia.app.viewmodel.BookingViewModelFactory
+import com.sanaesencia.app.viewmodel.UserViewModel
+import com.sanaesencia.app.viewmodel.UserViewModelFactory
 
 class MainActivity : ComponentActivity() {
 
@@ -27,6 +36,9 @@ class MainActivity : ComponentActivity() {
         val database = AppDatabase.getDatabase(this)
         val repository = AppointmentRepository(database.appointmentDao())
         val notificationHelper = NotificationHelper(this)
+
+        // 1. Inicializamos el repositorio de usuarios
+        val userRepository = UserRepository(database.userDao())
 
         setContent {
             SanaesenciaTheme {
@@ -38,32 +50,89 @@ class MainActivity : ComponentActivity() {
                         factory = BookingViewModelFactory(repository)
                     )
 
-                    var currentScreen by remember { mutableStateOf("catalog") }
+                    // 2. Inicializamos el ViewModel de usuarios
+                    val userViewModel: UserViewModel = viewModel(
+                        factory = UserViewModelFactory(userRepository)
+                    )
 
-                    when (currentScreen) {
-                        "catalog" -> {
-                            CatalogScreen(
-                                viewModel = bookingViewModel,
-                                onNavigateToBooking = { currentScreen = "booking" }
+                    val navController = rememberNavController()
+
+                    NavHost(
+                        navController = navController,
+                        startDestination = Screen.Login.route
+                    ) {
+
+                        // --- PANTALLA DE LOGIN ---
+                        composable(Screen.Login.route) {
+                            LoginScreen(
+                                viewModel = userViewModel, // <-- Pasamos el ViewModel
+                                onLoginSuccess = { role ->
+                                    navController.navigate(Screen.Main.createRoute(role.name)) {
+                                        popUpTo(Screen.Login.route) { inclusive = true }
+                                    }
+                                },
+                                onNavigateToSignUp = { navController.navigate(Screen.SignUp.route) },
+                                onNavigateToForgotPassword = { navController.navigate(Screen.ForgotPassword.route) }
                             )
                         }
-                        "booking" -> {
+
+                        // --- PANTALLA DE REGISTRO ---
+                        composable(Screen.SignUp.route) {
+                            SignUpScreen(
+                                viewModel = userViewModel, // <-- Pasamos el ViewModel
+                                onRegisterSuccess = {
+                                    Toast.makeText(this@MainActivity, "Registro exitoso", Toast.LENGTH_SHORT).show()
+                                    navController.popBackStack()
+                                },
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // --- PANTALLA DE RECUPERAR CONTRASEÑA ---
+                        composable(Screen.ForgotPassword.route) {
+                            ForgotPasswordScreen(
+                                viewModel = userViewModel, // <-- Pasamos el ViewModel
+                                onBack = { navController.popBackStack() },
+                                onPasswordResetSuccess = {
+                                    Toast.makeText(this@MainActivity, "Contraseña actualizada", Toast.LENGTH_SHORT).show()
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+
+                        // --- PANTALLA PRINCIPAL (Dashboards con Navbars) ---
+                        composable(Screen.Main.route) { backStackEntry ->
+                            val role = backStackEntry.arguments?.getString("role") ?: UserRole.PACIENTE.name
+
+                            MainScreen(
+                                parentNavController = navController,
+                                userRole = role,
+                                bookingViewModel = bookingViewModel,
+                                onLogout = {
+                                    navController.navigate(Screen.Login.route) {
+                                        popUpTo(0)
+                                    }
+                                }
+                            )
+                        }
+
+                        // --- PANTALLA DE AGENDAR CITA ---
+                        composable(Screen.Booking.route) {
                             BookingScreen(
                                 viewModel = bookingViewModel,
                                 onBookingSuccess = { appointment ->
                                     notificationHelper.sendBookingNotification(
-                                        serviceName = appointment.serviceType,
+                                        serviceName = "Cita Agendada",
                                         date = appointment.date
                                     )
-                                    val boxMsg = appointment.boxNumber?.let { " en Box $it" } ?: ""
                                     Toast.makeText(
-                                        this,
-                                        "Cita registrada exitosamente$boxMsg",
+                                        this@MainActivity,
+                                        "Cita registrada exitosamente",
                                         Toast.LENGTH_LONG
                                     ).show()
-                                    currentScreen = "catalog"
+                                    navController.popBackStack()
                                 },
-                                onBack = { currentScreen = "catalog" }
+                                onBack = { navController.popBackStack() }
                             )
                         }
                     }
