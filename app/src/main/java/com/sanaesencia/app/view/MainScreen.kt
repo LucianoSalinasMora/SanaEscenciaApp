@@ -1,17 +1,26 @@
 package com.sanaesencia.app.view
 
+import android.Manifest
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -20,6 +29,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.sanaesencia.app.R
 import com.sanaesencia.app.Screen
+import com.sanaesencia.app.data.AppNotification
+import com.sanaesencia.app.data.NotificationCategory
+import com.sanaesencia.app.data.NotificationHelper
 import com.sanaesencia.app.data.UserRole
 import com.sanaesencia.app.viewmodel.BookingViewModel
 import com.sanaesencia.app.viewmodel.UserViewModel
@@ -31,11 +43,41 @@ fun MainScreen(
     userRole: String, // Recibe "PACIENTE", "PROFESIONAL" o "ADMIN"
     userViewModel: UserViewModel,
     bookingViewModel: BookingViewModel,
+    notificationHelper: NotificationHelper,
     onLogout: () -> Unit // Acción para cerrar sesión
 ) {
+    val context = LocalContext.current
     val bottomNavController = rememberNavController()
 
-    // 1. Configuración de TABS según el Rol
+    // Estado del modal de notificaciones
+    var showNotificationSheet by remember { mutableStateOf(false) }
+
+    // Notificaciones de la app (StateFlow)
+    val notifications by NotificationHelper.notificationsState.collectAsState()
+    val unreadCount = remember(notifications) { notifications.count { !it.isRead } }
+
+    // Launcher para pedir permiso POST_NOTIFICATIONS en Android 13+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (isGranted) {
+                Toast.makeText(context, "Permiso de notificaciones concedido", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "No recibirás notificaciones en la barra de estado", Toast.LENGTH_LONG).show()
+            }
+        }
+    )
+
+    // Solicitar permiso automáticamente si no se ha otorgado en Android 13+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (!notificationHelper.hasNotificationPermission()) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    // Configuración de TABS según el Rol
     val navItems = when (userRole) {
         UserRole.ADMIN.name -> listOf(
             Screen.Inicio,             // Dashboard y Proyecciones
@@ -59,7 +101,7 @@ fun MainScreen(
     }
 
     Scaffold(
-        // 2. TopAppBar global con Isotipo/Logo, Campana de Notificaciones y Cierre de Sesión
+        // TopAppBar global con Logo, Campana con Insignia de Notificaciones y Cierre de Sesión
         topBar = {
             TopAppBar(
                 title = {
@@ -70,8 +112,25 @@ fun MainScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = { /* Lógica para notificaciones push */ }) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Notificaciones")
+                    // Campana de Notificaciones con Badge de no leídas
+                    IconButton(onClick = {
+                        notificationHelper.markAllAsRead()
+                        showNotificationSheet = true
+                    }) {
+                        BadgedBox(
+                            badge = {
+                                if (unreadCount > 0) {
+                                    Badge(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError
+                                    ) {
+                                        Text(if (unreadCount > 9) "9+" else unreadCount.toString())
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Default.Notifications, contentDescription = "Notificaciones y Alertas")
+                        }
                     }
                     IconButton(onClick = {
                         userViewModel.logout()
@@ -122,10 +181,10 @@ fun MainScreen(
                 }
             } else if (userRole == UserRole.PROFESIONAL.name) {
                 FloatingActionButton(
-                    onClick = { /* Agendar a paciente asignado */ },
+                    onClick = { parentNavController.navigate(Screen.Booking.route) },
                     containerColor = MaterialTheme.colorScheme.tertiary
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Agendar a Paciente")
+                    Icon(Icons.Default.Add, contentDescription = "Agendar Paciente")
                 }
             }
         }
@@ -136,7 +195,13 @@ fun MainScreen(
             modifier = Modifier.padding(paddingValues)
         ) {
             // Vistas compartidas
-            composable(Screen.Inicio.route) { DashboardScreen(viewModel = bookingViewModel, role = userRole) }
+            composable(Screen.Inicio.route) {
+                DashboardScreen(
+                    viewModel = bookingViewModel,
+                    notificationHelper = notificationHelper,
+                    role = userRole
+                )
+            }
             composable(Screen.Profile.route) { ProfileScreen(userViewModel = userViewModel, bookingViewModel = bookingViewModel) }
             composable(Screen.About.route) { AboutScreen(role = userRole) }
 
@@ -144,13 +209,250 @@ fun MainScreen(
             composable(Screen.Catalog.route) { CatalogTabScreen() }
 
             // Vistas de Profesional
-            composable(Screen.MyPatients.route) { MyPatientsScreen(bookingViewModel = bookingViewModel) }
+            composable(Screen.MyPatients.route) {
+                MyPatientsScreen(
+                    bookingViewModel = bookingViewModel,
+                    notificationHelper = notificationHelper
+                )
+            }
             composable(Screen.MySchedule.route) { /* MyScheduleScreen() */ }
 
             // Vistas de Administrador
             composable(Screen.ManageProducts.route) { /* ManageProductsScreen() */ }
             composable(Screen.ManageSchedule.route) { /* ManageScheduleScreen() */ }
             composable(Screen.AdminProfessionals.route) { AdminProfessionalsScreen(viewModel = userViewModel) }
+        }
+
+        // --- SHEET MODAL PARA VER NOTIFICACIONES PUSH Y ALERTAS ---
+        if (showNotificationSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showNotificationSheet = false },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            ) {
+                NotificationCenterContent(
+                    notifications = notifications,
+                    notificationHelper = notificationHelper,
+                    onRequestPermission = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    },
+                    onClose = { showNotificationSheet = false }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun NotificationCenterContent(
+    notifications: List<AppNotification>,
+    notificationHelper: NotificationHelper,
+    onRequestPermission: () -> Unit,
+    onClose: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.NotificationsActive,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Centro de Notificaciones",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            IconButton(onClick = onClose) {
+                Icon(Icons.Default.Close, contentDescription = "Cerrar")
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notificationHelper.hasNotificationPermission()) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        text = "Permiso de Notificaciones Desactivado",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Para recibir las alertas en la barra de estado de tu teléfono, otorga el permiso de sistema.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = onRequestPermission,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Permitir Notificaciones")
+                    }
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                onClick = {
+                    notificationHelper.sendFollowUpNotification(
+                        patientName = "Paciente",
+                        serviceName = "Terapia Medicina Biorreguladora",
+                        customMessage = "Recordatorio: Tu próximo control de seguimiento está sugerido para esta semana."
+                    )
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Probar Seguimiento", style = MaterialTheme.typography.labelSmall)
+            }
+
+            OutlinedButton(
+                onClick = {
+                    notificationHelper.sendPromoNotification(
+                        title = "¡Novedad de Temporada!",
+                        description = "Obtén 25% de descuento en Aromaterapia y Sanación Holística.",
+                        promoCode = "SALUD25"
+                    )
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Default.LocalOffer, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Probar Promo", style = MaterialTheme.typography.labelSmall)
+            }
+        }
+
+        HorizontalDivider()
+
+        if (notifications.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No tienes notificaciones registradas.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.heightIn(max = 400.dp)
+            ) {
+                items(notifications) { notification ->
+                    NotificationCardItem(notification)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+@Composable
+fun NotificationCardItem(notification: AppNotification) {
+    val (icon, iconColor, containerColor) = when (notification.category) {
+        NotificationCategory.CONFIRMATION -> Triple(
+            Icons.Default.CheckCircle,
+            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+        )
+        NotificationCategory.SEGUIMIENTO -> Triple(
+            Icons.Default.Schedule,
+            MaterialTheme.colorScheme.tertiary,
+            MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)
+        )
+        NotificationCategory.NOVEDAD -> Triple(
+            Icons.Default.Campaign,
+            MaterialTheme.colorScheme.secondary,
+            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+        )
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = containerColor)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(iconColor.copy(alpha = 0.2f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(20.dp))
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = notification.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = notification.timestamp,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = notification.message,
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                if (!notification.promoCode.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    AssistChip(
+                        onClick = { },
+                        label = { Text("Código Promo: ${notification.promoCode}") },
+                        leadingIcon = { Icon(Icons.Default.ConfirmationNumber, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    )
+                }
+            }
         }
     }
 }

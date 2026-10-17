@@ -6,20 +6,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Notes
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Notes
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.data.AppointmentEntity
+import com.sanaesencia.app.data.NotificationHelper
 import com.sanaesencia.app.data.Validators
 import com.sanaesencia.app.data.mockProfessionals
 import com.sanaesencia.app.viewmodel.BookingViewModel
@@ -28,8 +24,10 @@ import com.sanaesencia.app.viewmodel.UserViewModel
 @Composable
 fun DashboardScreen(
     viewModel: BookingViewModel,
+    notificationHelper: NotificationHelper,
     role: String = "PACIENTE"
 ) {
+    val context = LocalContext.current
     val appointments by viewModel.appointments.collectAsState()
 
     LazyColumn(
@@ -45,9 +43,106 @@ fun DashboardScreen(
         item {
             ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("¡Bienvenido a Centro Sanaesencia!", style = MaterialTheme.typography.titleMedium)
+                    Text("¡Bienvenido a Centro Sanaesencia!", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("Explora nuestras especialidades, agenda horas médicas presenciales en Los Vilos u online, e infórmate de nuestras novedades.")
+                }
+            }
+        }
+
+        // --- SECCIÓN: ALERTAS DE NOVEDADES Y PROMOCIONES ---
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Campaign,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Novedades y Promociones Activas",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+
+                    Text(
+                        text = "¡Aprovecha 20% de descuento en Terapias de Sanación este mes! Código promocional: SANA20",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+
+                    Button(
+                        onClick = {
+                            notificationHelper.sendPromoNotification(
+                                title = "¡Promoción Especial Sanaesencia!",
+                                description = "Obtén 20% de descuento en Terapias Complementarias presenciales en Los Vilos.",
+                                promoCode = "SANA20"
+                            )
+                            Toast.makeText(context, "Alerta de novedad enviada a notificaciones push", Toast.LENGTH_SHORT).show()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(Icons.Default.NotificationsActive, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Activar Alerta de Promoción")
+                    }
+                }
+            }
+        }
+
+        // --- SECCIÓN: ALERTAS DE SEGUIMIENTO CITA / CONTROLES ---
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Alertas de Seguimiento y Controles",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
+
+                    Text(
+                        text = "Recibe avisos periódicos de seguimiento para tus evaluaciones kinesiológicas y controles psicológicos.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+
+                    OutlinedButton(
+                        onClick = {
+                            val lastAppointment = appointments.firstOrNull()
+                            val service = lastAppointment?.serviceType ?: "Medicina Holística"
+                            notificationHelper.sendFollowUpNotification(
+                                patientName = "Estimado Paciente",
+                                serviceName = service,
+                                customMessage = "Recordatorio Sanaesencia: Ha pasado tiempo desde tu atención en $service. ¿Deseas agendar un control de seguimiento?"
+                            )
+                            Toast.makeText(context, "Alerta de seguimiento generada", Toast.LENGTH_SHORT).show()
+                        }
+                    ) {
+                        Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Solicitar Recordatorio de Seguimiento")
+                    }
                 }
             }
         }
