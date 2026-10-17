@@ -16,6 +16,15 @@ class UserRepository(private val userDao: UserDao) {
         securityAnswer = "admin"
     )
 
+    // Carga los usuarios iniciales (profesionales de la web y paciente de prueba) si aún no existen
+    suspend fun seedInitialData() {
+        seedUsers.forEach { user ->
+            if (userDao.getUserByRun(user.run) == null) {
+                userDao.insertUser(user)
+            }
+        }
+    }
+
     suspend fun insertUser(user: UserEntity) {
         userDao.insertUser(user)
     }

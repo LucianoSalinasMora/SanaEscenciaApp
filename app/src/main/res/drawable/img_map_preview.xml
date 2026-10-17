@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="100dp"
+    android:viewportWidth="400"
+    android:viewportHeight="200">
+
+    <!-- Fondo de mapa -->
+    <path
+        android:fillColor="#E8F5E9"
+        android:pathData="M0,0h400v200h-400z" />
+
+    <!-- Calles / Calles del mapa -->
+    <path
+        android:strokeColor="#C8E6C9"
+        android:strokeWidth="12"
+        android:pathData="M0,60 L400,60 M0,140 L400,140 M100,0 L100,200 M280,0 L280,200" />
+
+    <path
+        android:strokeColor="#A5D6A7"
+        android:strokeWidth="18"
+        android:pathData="M0,100 L400,100 M200,0 L200,200" />
+
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="12"
+        android:pathData="M0,100 L400,100 M200,0 L200,200" />
+
+    <!-- Sombra del pin -->
+    <path
+        android:fillColor="#33000000"
+        android:pathData="M200,115 A12,6 0 1,0 200,127 A12,6 0 1,0 200,115 Z" />
+
+    <!-- Marcador / Pin de Ubicación (Google Maps style) -->
+    <path
+        android:fillColor="#E53935"
+        android:pathData="M200,50 C186.2,50 175,61.2 175,75 C175,93.7 200,115 200,115 C200,115 225,93.7 225,75 C225,61.2 213.8,50 200,50 Z" />
+
+    <!-- Círculo interior del pin -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M200,65 A10,10 0 1,0 200,85 A10,10 0 1,0 200,65 Z" />
+
+</vector>
