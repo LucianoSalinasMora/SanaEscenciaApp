@@ -1,19 +1,28 @@
 package com.sanaesencia.app.view
 
+import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import com.sanaesencia.app.R
 import com.sanaesencia.app.data.AppointmentEntity
 import com.sanaesencia.app.data.NotificationHelper
 import com.sanaesencia.app.data.UserRole
@@ -387,7 +396,187 @@ fun ProfessionalsScreen() {
 
 @Composable
 fun AboutScreen(role: String = "PACIENTE") {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Nosotros", style = MaterialTheme.typography.headlineMedium)
+    val context = LocalContext.current
+    val mapsUrl = "https://maps.app.goo.gl/3hFvN2dRbjQkc5vq5"
+
+    fun openGoogleMaps() {
+        val intent = Intent(Intent.ACTION_VIEW, mapsUrl.toUri())
+        try {
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            Toast.makeText(context, "No se pudo abrir la aplicación de mapas", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Text(
+                text = "Nosotros",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        item {
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "Logo Centro Sanaesencia",
+                        modifier = Modifier.height(42.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "Centro Médico y Holístico Sanaesencia",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Text(
+                        text = "Somos un centro interdisciplinario dedicado al cuidado de la salud integral, combinando medicina biorreguladora, kinesiología, psicología, aromaterapia y terapias complementarias presenciales en Los Vilos y atención online.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+
+        // --- TARJETA DE UBICACIÓN Y MAPA INTERACTIVO ---
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { openGoogleMaps() },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Image(
+                            painter = painterResource(id = R.drawable.img_map_preview),
+                            contentDescription = "Mapa Ubicación Sanaesencia Caupolicán 220",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                        )
+
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                    contentDescription = "Abrir Google Maps",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Abrir Maps",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Ubicación Presencial",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Text(
+                            text = "Caupolicán 220, Los Vilos, Región de Coquimbo, Chile",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        Text(
+                            text = "Toca la imagen o presiona el botón para abrir la ruta en Google Maps.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Button(
+                            onClick = { openGoogleMaps() },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Place,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Ver Ubicación en Google Maps")
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- CONTACTO Y HORARIOS ---
+        item {
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Información de Atención",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Contacto / WhatsApp: +56 9 1234 5678", style = MaterialTheme.typography.bodyMedium)
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Horario: Lunes a Viernes 09:00 - 19:00 hrs", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        }
     }
 }
