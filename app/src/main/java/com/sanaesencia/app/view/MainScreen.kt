@@ -49,6 +49,9 @@ fun MainScreen(
     val context = LocalContext.current
     val bottomNavController = rememberNavController()
 
+    // Solo el rol PACIENTE maneja e interactúa con notificaciones push
+    val isPaciente = userRole == UserRole.PACIENTE.name
+
     // Estado del modal de notificaciones
     var showNotificationSheet by remember { mutableStateOf(false) }
 
@@ -56,7 +59,7 @@ fun MainScreen(
     val notifications by NotificationHelper.notificationsState.collectAsState()
     val unreadCount = remember(notifications) { notifications.count { !it.isRead } }
 
-    // Launcher para pedir permiso POST_NOTIFICATIONS en Android 13+
+    // Launcher para pedir permiso POST_NOTIFICATIONS en Android 13+ (Solo si es Paciente)
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
@@ -68,9 +71,9 @@ fun MainScreen(
         }
     )
 
-    // Solicitar permiso automáticamente si no se ha otorgado en Android 13+
-    LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    // Solicitar permiso automáticamente sólo para el rol PACIENTE en Android 13+
+    LaunchedEffect(userRole) {
+        if (isPaciente && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (!notificationHelper.hasNotificationPermission()) {
                 permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
@@ -101,7 +104,7 @@ fun MainScreen(
     }
 
     Scaffold(
-        // TopAppBar global con Logo, Campana con Insignia de Notificaciones y Cierre de Sesión
+        // TopAppBar global con Logo, Campana (sólo para PACIENTE) y Cierre de Sesión
         topBar = {
             TopAppBar(
                 title = {
@@ -112,26 +115,29 @@ fun MainScreen(
                     )
                 },
                 actions = {
-                    // Campana de Notificaciones con Badge de no leídas
-                    IconButton(onClick = {
-                        notificationHelper.markAllAsRead()
-                        showNotificationSheet = true
-                    }) {
-                        BadgedBox(
-                            badge = {
-                                if (unreadCount > 0) {
-                                    Badge(
-                                        containerColor = MaterialTheme.colorScheme.error,
-                                        contentColor = MaterialTheme.colorScheme.onError
-                                    ) {
-                                        Text(if (unreadCount > 9) "9+" else unreadCount.toString())
+                    // Campana de Notificaciones sólo visible para PACIENTE
+                    if (isPaciente) {
+                        IconButton(onClick = {
+                            notificationHelper.markAllAsRead()
+                            showNotificationSheet = true
+                        }) {
+                            BadgedBox(
+                                badge = {
+                                    if (unreadCount > 0) {
+                                        Badge(
+                                            containerColor = MaterialTheme.colorScheme.error,
+                                            contentColor = MaterialTheme.colorScheme.onError
+                                        ) {
+                                            Text(if (unreadCount > 9) "9+" else unreadCount.toString())
+                                        }
                                     }
                                 }
+                            ) {
+                                Icon(Icons.Default.Notifications, contentDescription = "Notificaciones y Alertas")
                             }
-                        ) {
-                            Icon(Icons.Default.Notifications, contentDescription = "Notificaciones y Alertas")
                         }
                     }
+
                     IconButton(onClick = {
                         userViewModel.logout()
                         onLogout()
@@ -223,8 +229,8 @@ fun MainScreen(
             composable(Screen.AdminProfessionals.route) { AdminProfessionalsScreen(viewModel = userViewModel) }
         }
 
-        // --- SHEET MODAL PARA VER NOTIFICACIONES PUSH Y ALERTAS ---
-        if (showNotificationSheet) {
+        // --- SHEET MODAL PARA VER NOTIFICACIONES PUSH Y ALERTAS (SÓLO PACIENTE) ---
+        if (isPaciente && showNotificationSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showNotificationSheet = false },
                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)

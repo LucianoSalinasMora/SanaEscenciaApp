@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.data.AppointmentEntity
 import com.sanaesencia.app.data.NotificationHelper
+import com.sanaesencia.app.data.UserRole
 import com.sanaesencia.app.data.Validators
 import com.sanaesencia.app.data.mockProfessionals
 import com.sanaesencia.app.viewmodel.BookingViewModel
@@ -29,6 +30,7 @@ fun DashboardScreen(
 ) {
     val context = LocalContext.current
     val appointments by viewModel.appointments.collectAsState()
+    val isPaciente = role == UserRole.PACIENTE.name
 
     LazyColumn(
         modifier = Modifier
@@ -50,105 +52,111 @@ fun DashboardScreen(
             }
         }
 
-        // --- SECCIÓN: ALERTAS DE NOVEDADES Y PROMOCIONES ---
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Campaign,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+        // --- SECCIÓN: ALERTAS Y NOTIFICACIONES (SÓLO VISIBLE PARA PACIENTES) ---
+        if (isPaciente) {
+            // 1. Alertas de Novedades y Promociones
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Campaign,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Novedades y Promociones Activas",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+
                         Text(
-                            text = "Novedades y Promociones Activas",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
+                            text = "¡Aprovecha 20% de descuento en Terapias de Sanación este mes! Código promocional: SANA20",
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
-                    }
 
-                    Text(
-                        text = "¡Aprovecha 20% de descuento en Terapias de Sanación este mes! Código promocional: SANA20",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-
-                    Button(
-                        onClick = {
-                            notificationHelper.sendPromoNotification(
-                                title = "¡Promoción Especial Sanaesencia!",
-                                description = "Obtén 20% de descuento en Terapias Complementarias presenciales en Los Vilos.",
-                                promoCode = "SANA20"
-                            )
-                            Toast.makeText(context, "Alerta de novedad enviada a notificaciones push", Toast.LENGTH_SHORT).show()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    ) {
-                        Icon(Icons.Default.NotificationsActive, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Activar Alerta de Promoción")
+                        Button(
+                            onClick = {
+                                notificationHelper.sendPromoNotification(
+                                    title = "¡Promoción Especial Sanaesencia!",
+                                    description = "Obtén 20% de descuento en Terapias Complementarias presenciales en Los Vilos.",
+                                    promoCode = "SANA20"
+                                )
+                                Toast.makeText(context, "Alerta de novedad enviada a notificaciones push", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Icon(Icons.Default.NotificationsActive, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Activar Alerta de Promoción")
+                        }
                     }
                 }
             }
-        }
 
-        // --- SECCIÓN: ALERTAS DE SEGUIMIENTO CITA / CONTROLES ---
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Schedule,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+            // 2. Alertas de Seguimiento Cita / Controles
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Alertas de Seguimiento y Controles",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
+
                         Text(
-                            text = "Alertas de Seguimiento y Controles",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
+                            text = "Recibe avisos periódicos de seguimiento para tus evaluaciones kinesiológicas y controles psicológicos.",
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onTertiaryContainer
                         )
-                    }
 
-                    Text(
-                        text = "Recibe avisos periódicos de seguimiento para tus evaluaciones kinesiológicas y controles psicológicos.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-
-                    OutlinedButton(
-                        onClick = {
-                            val lastAppointment = appointments.firstOrNull()
-                            val service = lastAppointment?.serviceType ?: "Medicina Holística"
-                            notificationHelper.sendFollowUpNotification(
-                                patientName = "Estimado Paciente",
-                                serviceName = service,
-                                customMessage = "Recordatorio Sanaesencia: Ha pasado tiempo desde tu atención en $service. ¿Deseas agendar un control de seguimiento?"
-                            )
-                            Toast.makeText(context, "Alerta de seguimiento generada", Toast.LENGTH_SHORT).show()
+                        OutlinedButton(
+                            onClick = {
+                                val lastAppointment = appointments.firstOrNull()
+                                val service = lastAppointment?.serviceType ?: "Medicina Holística"
+                                notificationHelper.sendFollowUpNotification(
+                                    patientName = "Estimado Paciente",
+                                    serviceName = service,
+                                    customMessage = "Recordatorio Sanaesencia: Ha pasado tiempo desde tu atención en $service. ¿Deseas agendar un control de seguimiento?"
+                                )
+                                Toast.makeText(context, "Alerta de seguimiento generada", Toast.LENGTH_SHORT).show()
+                            }
+                        ) {
+                            Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Solicitar Recordatorio de Seguimiento")
                         }
-                    ) {
-                        Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Solicitar Recordatorio de Seguimiento")
                     }
                 }
             }
         }
 
         item {
-            Text("Tus Próximas Citas Agendadas", style = MaterialTheme.typography.titleLarge)
+            Text(
+                if (isPaciente) "Tus Próximas Citas Agendadas" else "Resumen de Citas Médicas",
+                style = MaterialTheme.typography.titleLarge
+            )
         }
 
         if (appointments.isEmpty()) {
@@ -158,7 +166,7 @@ fun DashboardScreen(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     Text(
-                        text = "No tienes citas agendadas aún. Presiona el botón '+' para reservar una hora.",
+                        text = if (isPaciente) "No tienes citas agendadas aún. Presiona el botón '+' para reservar una hora." else "No hay citas registradas en el sistema.",
                         modifier = Modifier.padding(16.dp),
                         style = MaterialTheme.typography.bodyMedium
                     )
