@@ -24,6 +24,12 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
             initialValue = emptyList()
         )
 
+    init {
+        viewModelScope.launch {
+            repository.seedInitialData()
+        }
+    }
+
     fun registerUser(user: UserEntity, onSuccess: () -> Unit) {
         viewModelScope.launch {
             repository.insertUser(user)

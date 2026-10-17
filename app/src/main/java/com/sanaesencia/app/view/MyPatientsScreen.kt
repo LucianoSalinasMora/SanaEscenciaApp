@@ -16,14 +16,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.data.NotificationHelper
 import com.sanaesencia.app.viewmodel.BookingViewModel
+import com.sanaesencia.app.viewmodel.UserViewModel
 
 @Composable
 fun MyPatientsScreen(
     bookingViewModel: BookingViewModel,
+    userViewModel: UserViewModel,
     notificationHelper: NotificationHelper
 ) {
     val context = LocalContext.current
-    val appointments by bookingViewModel.appointments.collectAsState()
+    val allAppointments by bookingViewModel.appointments.collectAsState()
+    val currentUser by userViewModel.currentUser.collectAsState()
+    // Cada profesional ve solo a sus pacientes
+    val appointments = allAppointments.filter { it.professionalName == currentUser?.name }
 
     Column(
         modifier = Modifier

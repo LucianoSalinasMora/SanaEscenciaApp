@@ -55,6 +55,9 @@ fun MainScreen(
     // Estado del modal de notificaciones
     var showNotificationSheet by remember { mutableStateOf(false) }
 
+    // Alerta de confirmación para cerrar sesión
+    var mostrarDialogoLogout by remember { mutableStateOf(false) }
+
     // Notificaciones de la app (StateFlow)
     val notifications by NotificationHelper.notificationsState.collectAsState()
     val unreadCount = remember(notifications) { notifications.count { !it.isRead } }
@@ -103,6 +106,29 @@ fun MainScreen(
         )
     }
 
+    if (mostrarDialogoLogout) {
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoLogout = false },
+            icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null) },
+            title = { Text("Cerrar sesión") },
+            text = { Text("¿Estás seguro de que deseas cerrar sesión?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    mostrarDialogoLogout = false
+                    userViewModel.logout()
+                    onLogout()
+                }) {
+                    Text("Sí, cerrar sesión")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogoLogout = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     Scaffold(
         // TopAppBar global con Logo, Campana (sólo para PACIENTE) y Cierre de Sesión
         topBar = {
@@ -138,10 +164,7 @@ fun MainScreen(
                         }
                     }
 
-                    IconButton(onClick = {
-                        userViewModel.logout()
-                        onLogout()
-                    }) {
+                    IconButton(onClick = { mostrarDialogoLogout = true }) {
                         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar Sesión")
                     }
                 },
@@ -204,28 +227,38 @@ fun MainScreen(
             composable(Screen.Inicio.route) {
                 DashboardScreen(
                     viewModel = bookingViewModel,
+                    userViewModel = userViewModel,
                     notificationHelper = notificationHelper,
                     role = userRole
                 )
             }
             composable(Screen.Profile.route) { ProfileScreen(userViewModel = userViewModel, bookingViewModel = bookingViewModel) }
-            composable(Screen.About.route) { AboutScreen(role = userRole) }
+            composable(Screen.About.route) {
+                // El admin ve Nosotros + gestión de reseñas; los demás ven la pantalla con mapa
+                if (userRole == UserRole.ADMIN.name) NosotrosScreen(role = userRole) else AboutScreen(role = userRole)
+            }
 
             // Vistas de Paciente
-            composable(Screen.Catalog.route) { CatalogTabScreen() }
+            composable(Screen.Catalog.route) {
+                ServiciosCatalogoScreen(
+                    userViewModel = userViewModel,
+                    onAgendar = { parentNavController.navigate(Screen.Booking.route) }
+                )
+            }
 
             // Vistas de Profesional
             composable(Screen.MyPatients.route) {
                 MyPatientsScreen(
                     bookingViewModel = bookingViewModel,
+                    userViewModel = userViewModel,
                     notificationHelper = notificationHelper
                 )
             }
-            composable(Screen.MySchedule.route) { /* MyScheduleScreen() */ }
+            composable(Screen.MySchedule.route) { MyScheduleScreen(bookingViewModel = bookingViewModel, userViewModel = userViewModel) }
 
             // Vistas de Administrador
-            composable(Screen.ManageProducts.route) { /* ManageProductsScreen() */ }
-            composable(Screen.ManageSchedule.route) { /* ManageScheduleScreen() */ }
+            composable(Screen.ManageProducts.route) { ManageProductsScreen() }
+            composable(Screen.ManageSchedule.route) { ManageScheduleScreen(bookingViewModel = bookingViewModel) }
             composable(Screen.AdminProfessionals.route) { AdminProfessionalsScreen(viewModel = userViewModel) }
         }
 

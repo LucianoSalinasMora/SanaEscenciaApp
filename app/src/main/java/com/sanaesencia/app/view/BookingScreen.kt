@@ -47,12 +47,17 @@ fun BookingScreen(
     // Lista de Áreas / Especialidades del Centro
     val areas = listOf(
         "Psicología Infanto-Juvenil",
+        "Psicología Adolescentes y Adultos",
         "Terapia Ocupacional",
         "Fonoaudiología",
         "Psicopedagogía",
         "Nutrición Integrativa",
+        "Matronería y Salud Femenina",
         "Quiropraxia y Masajes",
-        "Terapia Floral y Aromaterapia"
+        "Terapia Floral y Aromaterapia",
+        "Evaluaciones del Neurodesarrollo",
+        "Medicina General y Salud Mental",
+        "Acupuntura"
     )
 
     // Filtrar profesionales disponibles según la especialidad seleccionada
