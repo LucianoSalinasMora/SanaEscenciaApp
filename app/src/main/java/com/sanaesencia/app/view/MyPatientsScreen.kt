@@ -1,5 +1,6 @@
 package com.sanaesencia.app.view
 
+import com.sanaesencia.app.viewmodel.UserViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,8 +19,10 @@ import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.viewmodel.BookingViewModel
 
 @Composable
-fun MyPatientsScreen(bookingViewModel: BookingViewModel) {
-    val appointments by bookingViewModel.appointments.collectAsState()
+fun MyPatientsScreen(bookingViewModel: BookingViewModel, userViewModel: UserViewModel) {
+    val allAppointments by bookingViewModel.appointments.collectAsState()
+    val currentUser by userViewModel.currentUser.collectAsState()
+    val appointments = allAppointments.filter { it.professionalName == currentUser?.name }
 
     Column(
         modifier = Modifier

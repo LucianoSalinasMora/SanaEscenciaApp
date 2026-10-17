@@ -24,13 +24,18 @@ import com.sanaesencia.app.data.Validators
 import com.sanaesencia.app.data.mockProfessionals
 import com.sanaesencia.app.viewmodel.BookingViewModel
 import com.sanaesencia.app.viewmodel.UserViewModel
+import com.sanaesencia.app.data.UserEntity
+import com.sanaesencia.app.data.UserRole
 
 @Composable
 fun DashboardScreen(
     viewModel: BookingViewModel,
+    userViewModel: UserViewModel,
     role: String = "PACIENTE"
 ) {
-    val appointments by viewModel.appointments.collectAsState()
+    val allAppointments by viewModel.appointments.collectAsState()
+    val currentUser by userViewModel.currentUser.collectAsState()
+    val appointments = filtrarCitasPorUsuario(allAppointments, currentUser)
 
     LazyColumn(
         modifier = Modifier
@@ -53,7 +58,12 @@ fun DashboardScreen(
         }
 
         item {
-            Text("Tus Próximas Citas Agendadas", style = MaterialTheme.typography.titleLarge)
+            val titulo = when (role) {
+                "ADMIN" -> "Citas Agendadas en el Centro"
+                "PROFESIONAL" -> "Próximas Citas con tus Pacientes"
+                else -> "Tus Próximas Citas Agendadas"
+            }
+            Text(titulo, style = MaterialTheme.typography.titleLarge)
         }
 
         if (appointments.isEmpty()) {
@@ -63,7 +73,11 @@ fun DashboardScreen(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     Text(
-                        text = "No tienes citas agendadas aún. Presiona el botón '+' para reservar una hora.",
+                        text = when (role) {
+                            "ADMIN" -> "Aún no hay citas agendadas en el centro."
+                            "PROFESIONAL" -> "Aún no tienes citas asignadas."
+                            else -> "No tienes citas agendadas aún. Presiona el botón '+' para reservar una hora."
+                        },
                         modifier = Modifier.padding(16.dp),
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -84,7 +98,8 @@ fun ProfileScreen(
 ) {
     val context = LocalContext.current
     val currentUser by userViewModel.currentUser.collectAsState()
-    val appointments by bookingViewModel.appointments.collectAsState()
+    val allAppointments by bookingViewModel.appointments.collectAsState()
+    val appointments = filtrarCitasPorUsuario(allAppointments, currentUser)
 
     var isEditing by remember { mutableStateOf(false) }
     var name by remember(currentUser) { mutableStateOf(currentUser?.name ?: "") }
@@ -238,6 +253,10 @@ fun AppointmentCard(appointment: AppointmentEntity) {
                 Text("Atiende: ${appointment.professionalName}", style = MaterialTheme.typography.bodyMedium)
             }
 
+            if (appointment.patientName.isNotBlank()) {
+                Text("Paciente: ${appointment.patientName}", style = MaterialTheme.typography.bodyMedium)
+            }
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
@@ -286,5 +305,18 @@ fun ProfessionalsScreen() {
 fun AboutScreen(role: String = "PACIENTE") {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Nosotros", style = MaterialTheme.typography.headlineMedium)
+    }
+}
+
+// Cada usuario ve solo las citas que le corresponden (el admin ve todas)
+private fun filtrarCitasPorUsuario(
+    citas: List<AppointmentEntity>,
+    user: UserEntity?
+): List<AppointmentEntity> {
+    if (user == null) return emptyList()
+    return when (user.role) {
+        UserRole.PACIENTE -> citas.filter { it.patientRun == user.run }
+        UserRole.PROFESIONAL -> citas.filter { it.professionalName == user.name }
+        UserRole.ADMIN -> citas
     }
 }
