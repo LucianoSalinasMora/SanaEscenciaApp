@@ -1,27 +1,33 @@
 package com.sanaesencia.app.view
 
-import com.sanaesencia.app.viewmodel.UserViewModel
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Notes
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Notes
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.sanaesencia.app.data.NotificationHelper
 import com.sanaesencia.app.viewmodel.BookingViewModel
+import com.sanaesencia.app.viewmodel.UserViewModel
 
 @Composable
-fun MyPatientsScreen(bookingViewModel: BookingViewModel, userViewModel: UserViewModel) {
+fun MyPatientsScreen(
+    bookingViewModel: BookingViewModel,
+    userViewModel: UserViewModel,
+    notificationHelper: NotificationHelper
+) {
+    val context = LocalContext.current
     val allAppointments by bookingViewModel.appointments.collectAsState()
     val currentUser by userViewModel.currentUser.collectAsState()
+    // Cada profesional ve solo a sus pacientes
     val appointments = allAppointments.filter { it.professionalName == currentUser?.name }
 
     Column(
@@ -35,7 +41,7 @@ fun MyPatientsScreen(bookingViewModel: BookingViewModel, userViewModel: UserView
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Revise el contexto y notas previas ingresadas por sus pacientes antes de la consulta.",
+            text = "Revise el contexto y notas previas ingresadas por sus pacientes y envíe alertas de seguimiento pos-atención.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.secondary
         )
@@ -123,6 +129,25 @@ fun MyPatientsScreen(bookingViewModel: BookingViewModel, userViewModel: UserView
                                         style = MaterialTheme.typography.bodyMedium
                                     )
                                 }
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            OutlinedButton(
+                                onClick = {
+                                    val patient = appointment.patientName.ifBlank { "Estimado Paciente" }
+                                    notificationHelper.sendFollowUpNotification(
+                                        patientName = patient,
+                                        serviceName = appointment.serviceType,
+                                        customMessage = "Hola $patient, tu profesional tratante ha enviado una recomendación de seguimiento para tu atención de ${appointment.serviceType}."
+                                    )
+                                    Toast.makeText(context, "Alerta de seguimiento enviada a $patient", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Enviar Alerta de Seguimiento al Paciente")
                             }
                         }
                     }

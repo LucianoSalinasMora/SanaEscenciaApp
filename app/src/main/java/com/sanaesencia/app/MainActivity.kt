@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity() {
                         // --- PANTALLA DE LOGIN ---
                         composable(Screen.Login.route) {
                             LoginScreen(
-                                viewModel = userViewModel, // <-- Pasamos el ViewModel
+                                viewModel = userViewModel,
                                 onLoginSuccess = { role ->
                                     navController.navigate(Screen.Main.createRoute(role.name)) {
                                         popUpTo(Screen.Login.route) { inclusive = true }
@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
                         // --- PANTALLA DE REGISTRO ---
                         composable(Screen.SignUp.route) {
                             SignUpScreen(
-                                viewModel = userViewModel, // <-- Pasamos el ViewModel
+                                viewModel = userViewModel,
                                 onRegisterSuccess = {
                                     Toast.makeText(this@MainActivity, "Registro exitoso", Toast.LENGTH_SHORT).show()
                                     navController.popBackStack()
@@ -91,7 +91,7 @@ class MainActivity : ComponentActivity() {
                         // --- PANTALLA DE RECUPERAR CONTRASEÑA ---
                         composable(Screen.ForgotPassword.route) {
                             ForgotPasswordScreen(
-                                viewModel = userViewModel, // <-- Pasamos el ViewModel
+                                viewModel = userViewModel,
                                 onBack = { navController.popBackStack() },
                                 onPasswordResetSuccess = {
                                     Toast.makeText(this@MainActivity, "Contraseña actualizada", Toast.LENGTH_SHORT).show()
@@ -109,6 +109,7 @@ class MainActivity : ComponentActivity() {
                                 userRole = role,
                                 userViewModel = userViewModel,
                                 bookingViewModel = bookingViewModel,
+                                notificationHelper = notificationHelper,
                                 onLogout = {
                                     navController.navigate(Screen.Login.route) {
                                         popUpTo(0)
@@ -124,8 +125,9 @@ class MainActivity : ComponentActivity() {
                                 bookingViewModel = bookingViewModel,
                                 onBookingSuccess = { appointment ->
                                     notificationHelper.sendBookingNotification(
-                                        serviceName = "Cita Agendada",
-                                        date = appointment.date
+                                        serviceName = appointment.serviceType,
+                                        date = appointment.date,
+                                        timeSlot = appointment.timeSlot
                                     )
                                     Toast.makeText(
                                         this@MainActivity,
