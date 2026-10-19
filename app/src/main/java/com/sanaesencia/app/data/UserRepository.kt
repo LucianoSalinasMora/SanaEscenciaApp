@@ -4,6 +4,9 @@ import kotlinx.coroutines.flow.Flow
 
 class UserRepository(private val userDao: UserDao) {
 
+    @Volatile
+    private var isSeeded = false
+
     // Usuario administrador por defecto
     private val defaultAdmin = UserEntity(
         run = "admin",
@@ -16,12 +19,14 @@ class UserRepository(private val userDao: UserDao) {
         securityAnswer = "admin"
     )
 
-    // Carga los usuarios iniciales (profesionales de la web y paciente de prueba) si aún no existen
     suspend fun seedInitialData() {
-        seedUsers.forEach { user ->
-            if (userDao.getUserByRun(user.run) == null) {
-                userDao.insertUser(user)
-            }
+        if (isSeeded) return
+        try {
+            val allUsers = listOf(defaultAdmin) + seedUsers
+            userDao.insertUsers(allUsers)
+            isSeeded = true
+        } catch (e: Throwable) {
+            // Ignore if exists or error
         }
     }
 
@@ -42,15 +47,12 @@ class UserRepository(private val userDao: UserDao) {
         val formattedRun = cleanRun.replace(".", "").replace("-", "").uppercase()
 
         if (cleanRun.equals("admin", ignoreCase = true) && password == "admin") {
-            try {
-                userDao.insertUser(defaultAdmin)
-            } catch (e: Exception) {
-                // Ignore constraint exceptions if admin exists
-            }
+            seedInitialData()
             return defaultAdmin
         }
 
-        // Busca por RUN directo o RUN formateado sin puntos/guión
+        seedInitialData()
+
         return userDao.login(cleanRun, password)
             ?: userDao.login(formattedRun, password)
     }
@@ -63,12 +65,14 @@ class UserRepository(private val userDao: UserDao) {
             return defaultAdmin
         }
 
+        seedInitialData()
+
         return userDao.getUserByRun(cleanRun)
             ?: userDao.getUserByRun(formattedRun)
     }
 
     fun getUsersByRole(role: UserRole): Flow<List<UserEntity>> {
-        return userDao.getUsersByRole(role)
+        return userDao.getUsersByRole(role.name)
     }
 
     suspend fun updatePassword(run: String, newPassword: String) {

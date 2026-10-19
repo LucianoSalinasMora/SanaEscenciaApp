@@ -1,6 +1,5 @@
 package com.sanaesencia.app.data
 
-
 import kotlinx.coroutines.flow.Flow
 
 class AppointmentRepository(private val appointmentDao: AppointmentDao) {
@@ -13,5 +12,9 @@ class AppointmentRepository(private val appointmentDao: AppointmentDao) {
         } catch (e: Exception) {
             false
         }
+    }
+
+    suspend fun cancelAppointment(appointmentId: Long) {
+        appointmentDao.cancelAppointment(appointmentId)
     }
 }

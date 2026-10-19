@@ -8,6 +8,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +25,7 @@ import com.sanaesencia.app.viewmodel.UserViewModel
 fun AdminProfessionalsScreen(viewModel: UserViewModel) {
     val dbProfessionals by viewModel.professionals.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
+    var editingProfessional by remember { mutableStateOf<UserEntity?>(null) }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
@@ -36,7 +38,10 @@ fun AdminProfessionalsScreen(viewModel: UserViewModel) {
                 Text("Profesionales del Centro", style = MaterialTheme.typography.headlineSmall)
             }
             Button(
-                onClick = { showDialog = true }
+                onClick = {
+                    editingProfessional = null
+                    showDialog = true
+                }
             ) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Spacer(modifier = Modifier.width(4.dp))
@@ -79,8 +84,16 @@ fun AdminProfessionalsScreen(viewModel: UserViewModel) {
                                     Text("Tel: ${pro.phone}", style = MaterialTheme.typography.labelSmall)
                                 }
                             }
-                            IconButton(onClick = { viewModel.deleteProfessional(pro.run) {} }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
+                            Row {
+                                IconButton(onClick = {
+                                    editingProfessional = pro
+                                    showDialog = true
+                                }) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
+                                }
+                                IconButton(onClick = { viewModel.deleteProfessional(pro.run) {} }) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
+                                }
                             }
                         }
                     }
@@ -90,10 +103,11 @@ fun AdminProfessionalsScreen(viewModel: UserViewModel) {
     }
 
     if (showDialog) {
-        AddProfessionalDialog(
+        ProfessionalDialog(
+            professionalToEdit = editingProfessional,
             onDismiss = { showDialog = false },
-            onSave = { newPro ->
-                viewModel.registerProfessional(newPro) {
+            onSave = { pro ->
+                viewModel.registerUser(pro) {
                     showDialog = false
                 }
             }
@@ -102,16 +116,17 @@ fun AdminProfessionalsScreen(viewModel: UserViewModel) {
 }
 
 @Composable
-fun AddProfessionalDialog(
+fun ProfessionalDialog(
+    professionalToEdit: UserEntity?,
     onDismiss: () -> Unit,
     onSave: (UserEntity) -> Unit
 ) {
-    var run by remember { mutableStateOf("") }
-    var name by remember { mutableStateOf("") }
-    var specialty by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var run by remember { mutableStateOf(professionalToEdit?.run ?: "") }
+    var name by remember { mutableStateOf(professionalToEdit?.name ?: "") }
+    var specialty by remember { mutableStateOf(professionalToEdit?.specialty ?: "") }
+    var email by remember { mutableStateOf(professionalToEdit?.email ?: "") }
+    var phone by remember { mutableStateOf(professionalToEdit?.phone ?: "") }
+    var password by remember { mutableStateOf(professionalToEdit?.passwordHash ?: "") }
 
     val isRunValid = remember(run) { run.isBlank() || Validators.isValidRUN(run) }
     val isNameValid = remember(name) { name.isBlank() || Validators.isValidName(name) }
@@ -129,7 +144,7 @@ fun AddProfessionalDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Registrar Nuevo Profesional") },
+        title = { Text(if (professionalToEdit == null) "Registrar Nuevo Profesional" else "Editar Profesional") },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -137,7 +152,8 @@ fun AddProfessionalDialog(
             ) {
                 OutlinedTextField(
                     value = run,
-                    onValueChange = { run = it },
+                    onValueChange = { if (professionalToEdit == null) run = it },
+                    enabled = professionalToEdit == null,
                     label = { Text("RUN del Profesional") },
                     isError = !isRunValid,
                     supportingText = { if (!isRunValid) Text("RUN inválido", color = MaterialTheme.colorScheme.error) },
@@ -178,7 +194,7 @@ fun AddProfessionalDialog(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Contraseña Inicial") },
+                    label = { Text("Contraseña") },
                     visualTransformation = PasswordVisualTransformation(),
                     isError = !isPasswordValid,
                     supportingText = { if (!isPasswordValid) Text("Mínimo 4 caracteres", color = MaterialTheme.colorScheme.error) },
@@ -197,13 +213,15 @@ fun AddProfessionalDialog(
                             email = email.trim(),
                             phone = phone.trim(),
                             passwordHash = password.trim(),
-                            role = UserRole.PROFESIONAL
+                            role = UserRole.PROFESIONAL,
+                            securityQuestion = professionalToEdit?.securityQuestion ?: "Especialidad",
+                            securityAnswer = professionalToEdit?.securityAnswer ?: specialty.trim()
                         )
                     )
                 },
                 enabled = isFormValid
             ) {
-                Text("Guardar Profesional")
+                Text(if (professionalToEdit == null) "Guardar" else "Actualizar")
             }
         },
         dismissButton = {

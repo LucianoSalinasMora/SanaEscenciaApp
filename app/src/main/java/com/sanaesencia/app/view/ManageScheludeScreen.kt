@@ -96,7 +96,10 @@ fun ManageScheduleScreen(bookingViewModel: BookingViewModel) {
             }
         } else {
             items(ordenadas) { cita ->
-                AppointmentCard(cita)
+                AppointmentCard(
+                    appointment = cita,
+                    onCancel = { id -> bookingViewModel.cancelAppointment(id) }
+                )
             }
         }
     }

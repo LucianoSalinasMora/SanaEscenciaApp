@@ -25,4 +25,8 @@ interface AppointmentDao {
     // Cambiar el estado de una cita
     @Query("UPDATE appointments SET state = :newState WHERE id = :appointmentId")
     suspend fun updateAppointmentState(appointmentId: Long, newState: String)
+
+    // Cancelar una cita
+    @Query("UPDATE appointments SET status = 'Cancelada', state = 'CANCELADA' WHERE id = :appointmentId")
+    suspend fun cancelAppointment(appointmentId: Long)
 }

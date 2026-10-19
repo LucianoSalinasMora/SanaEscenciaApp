@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.data.AppointmentEntity
-import com.sanaesencia.app.data.mockProfessionals
 import com.sanaesencia.app.viewmodel.BookingViewModel
 import com.sanaesencia.app.viewmodel.UserViewModel
 import java.text.SimpleDateFormat
@@ -36,6 +35,7 @@ fun BookingScreen(
     val currentUser by userViewModel.currentUser.collectAsState()
     val dbProfessionals by userViewModel.professionals.collectAsState()
     val state by bookingViewModel.uiState.collectAsState()
+    val allAppointments by bookingViewModel.appointments.collectAsState()
 
     // Cargar automáticamente los datos del paciente logueado
     LaunchedEffect(currentUser) {
@@ -62,13 +62,7 @@ fun BookingScreen(
 
     // Filtrar profesionales disponibles según la especialidad seleccionada
     val availableProfessionals = remember(state.serviceType, dbProfessionals) {
-        val filteredFromDb = dbProfessionals.filter { it.specialty.equals(state.serviceType, ignoreCase = true) }.map { it.name }
-        if (filteredFromDb.isNotEmpty()) {
-            filteredFromDb
-        } else {
-            val filteredFromMock = mockProfessionals.filter { it.specialty.equals(state.serviceType, ignoreCase = true) }.map { it.name }
-            if (filteredFromMock.isNotEmpty()) filteredFromMock else listOf("Dr. Carlos Mendoza", "Dra. María Paz Silva", "Lic. Andrea Rojas", "Centro Sanaesencia")
-        }
+        bookingViewModel.getAvailableProfessionals(dbProfessionals, state.serviceType)
     }
 
     // Opciones de Horarios disponibles
@@ -81,6 +75,16 @@ fun BookingScreen(
         "16:00 PM",
         "17:00 PM"
     )
+
+    // Bloques horarios ya reservados para el profesional y fecha seleccionados (Evita solapamientos)
+    val bookedSlots = remember(allAppointments, state.date, state.professionalName) {
+        allAppointments.filter {
+            it.date == state.date &&
+            it.professionalName.equals(state.professionalName, ignoreCase = true) &&
+            it.state != "CANCELADA" &&
+            it.status != "Cancelada"
+        }.map { it.timeSlot }.toSet()
+    }
 
     var areaExpanded by remember { mutableStateOf(false) }
     var proExpanded by remember { mutableStateOf(false) }
@@ -111,6 +115,29 @@ fun BookingScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Error Alert Dialog / Card si ocurre un conflicto de solapamiento o validación
+            state.errorMessage?.let { errorMsg ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Error, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Aviso de Validación", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                            Text(errorMsg, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                        }
+                        IconButton(onClick = { bookingViewModel.clearError() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = MaterialTheme.colorScheme.onErrorContainer)
+                        }
+                    }
+                }
+            }
+
             // TARJETA DE DATOS DE PACIENTE (Cargados automáticamente de la sesión)
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -152,7 +179,7 @@ fun BookingScreen(
                         DropdownMenuItem(
                             text = { Text(area) },
                             onClick = {
-                                bookingViewModel.onAreaChanged(area)
+                                bookingViewModel.onAreaChanged(area, dbProfessionals)
                                 areaExpanded = false
                             }
                         )
@@ -160,7 +187,7 @@ fun BookingScreen(
                 }
             }
 
-            // 2. SELECCIÓN DE PROFESIONAL DEL ÁREA
+            // 2. SELECCIÓN DE PROFESIONAL DEL ÁREA (Filtrado dinámicamente)
             Text("2. Profesional del Área", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             ExposedDropdownMenuBox(
                 expanded = proExpanded,
@@ -183,7 +210,7 @@ fun BookingScreen(
                         DropdownMenuItem(
                             text = { Text(proName) },
                             onClick = {
-                                bookingViewModel.onProfessionalChanged(proName)
+                                bookingViewModel.onProfessionalChanged(proName, dbProfessionals)
                                 proExpanded = false
                             }
                         )
@@ -211,30 +238,42 @@ fun BookingScreen(
                 )
             )
 
-            // 4. SELECCIÓN DE HORARIO
+            // 4. SELECCIÓN DE HORARIO (Bloquea/Deshabilita bloques ya reservados)
             Text("4. Horario / Módulo Disponible", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                timeSlots.take(4).forEach { slot ->
-                    FilterChip(
-                        selected = state.timeSlot == slot,
-                        onClick = { bookingViewModel.onTimeSlotChanged(slot) },
-                        label = { Text(slot, style = MaterialTheme.typography.labelSmall) }
-                    )
-                }
+            if (state.date.isBlank()) {
+                Text("⚠️ Primero seleccione una fecha para ver los horarios disponibles.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                timeSlots.drop(4).forEach { slot ->
-                    FilterChip(
-                        selected = state.timeSlot == slot,
-                        onClick = { bookingViewModel.onTimeSlotChanged(slot) },
-                        label = { Text(slot, style = MaterialTheme.typography.labelSmall) }
-                    )
+            
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    timeSlots.take(4).forEach { slot ->
+                        val isBooked = bookedSlots.contains(slot)
+                        FilterChip(
+                            selected = state.timeSlot == slot,
+                            onClick = { bookingViewModel.onTimeSlotChanged(slot, dbProfessionals) },
+                            label = { Text(if (isBooked) "$slot (Ocupado)" else slot, style = MaterialTheme.typography.labelSmall) },
+                            enabled = !isBooked,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    timeSlots.drop(4).forEach { slot ->
+                        val isBooked = bookedSlots.contains(slot)
+                        FilterChip(
+                            selected = state.timeSlot == slot,
+                            onClick = { bookingViewModel.onTimeSlotChanged(slot, dbProfessionals) },
+                            label = { Text(if (isBooked) "$slot (Ocupado)" else slot, style = MaterialTheme.typography.labelSmall) },
+                            enabled = !isBooked,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
 
@@ -296,11 +335,11 @@ fun BookingScreen(
 
             Button(
                 onClick = {
-                    bookingViewModel.submitBooking { appointment ->
+                    bookingViewModel.submitBooking(dbProfessionals) { appointment ->
                         onBookingSuccess(appointment)
                     }
                 },
-                enabled = state.isFormValid,
+                enabled = state.isFormValid && state.date.isNotBlank() && !bookedSlots.contains(state.timeSlot),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
@@ -323,7 +362,7 @@ fun BookingScreen(
                     datePickerState.selectedDateMillis?.let { millis ->
                         val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                         val formattedDate = formatter.format(Date(millis))
-                        bookingViewModel.onDateChanged(formattedDate)
+                        bookingViewModel.onDateChanged(formattedDate, dbProfessionals)
                     }
                     showDatePicker = false
                 }) {

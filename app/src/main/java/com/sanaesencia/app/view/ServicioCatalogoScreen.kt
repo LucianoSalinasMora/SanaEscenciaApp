@@ -7,16 +7,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.sanaesencia.app.viewmodel.ProductViewModel
 import com.sanaesencia.app.viewmodel.UserViewModel
 
 @Composable
 fun ServiciosCatalogoScreen(
     userViewModel: UserViewModel,
+    productViewModel: ProductViewModel,
     onAgendar: () -> Unit
 ) {
     val profesionales by userViewModel.professionals.collectAsState()
+    val products by productViewModel.products.collectAsState()
 
     // Agrupa a los profesionales por especialidad y ordena las especialidades alfabéticamente
     val grupos = profesionales
@@ -92,17 +96,38 @@ fun ServiciosCatalogoScreen(
             }
         }
 
-        item {
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text("Productos de bienestar", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        text = "Línea propia Sanaesencia: kits, roll-ons y brumas de aromaterapia.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+        val availableProducts = products.distinctBy { it.name }.filter { it.isAvailable }
+        if (availableProducts.isNotEmpty()) {
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Productos y Kits de Bienestar",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            items(availableProducts) { product ->
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(product.name, style = MaterialTheme.typography.titleMedium)
+                            Text(product.description, style = MaterialTheme.typography.bodySmall)
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text("Stock disponible: ${product.stock} unidades", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+                            if (product.imageUrl.isNotBlank()) {
+                                Text("Imagen/Ref: ${product.imageUrl}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Precio: $${product.price.toInt()} CLP",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
             }
         }

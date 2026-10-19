@@ -11,9 +11,10 @@ import androidx.room.TypeConverters
         AppointmentEntity::class,
         UserEntity::class,
         ProductEntity::class,
-        ReviewEntity::class
+        ReviewEntity::class,
+        AboutInfoEntity::class,
     ],
-    version = 3,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -23,6 +24,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun productDao(): ProductDao
     abstract fun reviewDao(): ReviewDao
+    abstract fun aboutDao(): AboutDao
 
     companion object {
         @Volatile
@@ -33,9 +35,10 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "sanaesencia_db"
+                    "sanaesencia_db",
                 )
                     .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigrationOnDowngrade()
                     .build()
 
                 INSTANCE = instance
