@@ -27,7 +27,7 @@ fun CatalogScreen(
     productViewModel: ProductViewModel,
     onNavigateToBooking: () -> Unit
 ) {
-    val products by productViewModel.products.collectAsState()
+    val products by productViewModel.allProducts.collectAsState()
 
     val services = listOf(
         ServiceItem("Psicología Infanto-Juvenil", "Salud Mental", "Evaluación y acompañamiento emocional para niños y adolescentes."),

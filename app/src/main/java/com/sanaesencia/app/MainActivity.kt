@@ -43,13 +43,12 @@ class MainActivity : ComponentActivity() {
         val repository = AppointmentRepository(database.appointmentDao())
         val notificationHelper = NotificationHelper(this)
 
-        // 1. Inicializamos los repositorios
+        // 1. Inicializar los repositorios
         val userRepository = UserRepository(database.userDao())
         val productRepository = ProductRepository(database.productDao())
         val aboutRepository = AboutRepository(database.aboutDao())
 
-        // 2. Inicializamos el repositorio de productos
-        val productRepository = ProductRepository(database.productDao())
+
 
         setContent {
             SanaesenciaTheme {

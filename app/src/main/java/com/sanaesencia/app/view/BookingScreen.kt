@@ -85,7 +85,7 @@ fun BookingScreen(
     // Preseleccionar automáticamente el primer profesional del área si el actual no pertenece a la misma
     LaunchedEffect(state.serviceType, availableProfessionals) {
         if (availableProfessionals.isNotEmpty() && state.professionalName !in availableProfessionals) {
-            bookingViewModel.onProfessionalChanged(availableProfessionals.first())
+            bookingViewModel.onProfessionalChanged(availableProfessionals.first(), dbProfessionals)
         }
     }
 
@@ -132,7 +132,7 @@ fun BookingScreen(
     // Si el horario previamente seleccionado ya no está disponible, limpiarlo
     LaunchedEffect(availableTimeSlots) {
         if (state.timeSlot.isNotBlank() && state.timeSlot !in availableTimeSlots) {
-            bookingViewModel.onTimeSlotChanged("")
+            bookingViewModel.onTimeSlotChanged("", dbProfessionals)
         }
     }
 
@@ -231,7 +231,7 @@ fun BookingScreen(
                             onClick = {
                                 val pros = getProfessionalsForArea(area)
                                 val firstPro = pros.firstOrNull() ?: ""
-                                bookingViewModel.onAreaChanged(area, firstPro)
+                                bookingViewModel.onAreaChanged(area, firstPro, dbProfessionals)
                                 areaExpanded = false
                             }
                         )
@@ -319,7 +319,7 @@ fun BookingScreen(
                         rowSlots.forEach { slot ->
                             FilterChip(
                                 selected = state.timeSlot == slot,
-                                onClick = { bookingViewModel.onTimeSlotChanged(slot) },
+                                onClick = { bookingViewModel.onTimeSlotChanged(slot, dbProfessionals) },
                                 label = { Text(slot, style = MaterialTheme.typography.labelSmall) }
                             )
                         }
@@ -394,7 +394,7 @@ fun BookingScreen(
                         }
                     )
                 },
-                enabled = state.isFormValid && state.date.isNotBlank() && !bookedSlots.contains(state.timeSlot),
+                enabled = state.isFormValid && state.date.isNotBlank() && availableTimeSlots.contains(state.timeSlot),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
