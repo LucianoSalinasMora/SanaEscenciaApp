@@ -5,6 +5,9 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -215,7 +218,11 @@ fun MainScreen(
         NavHost(
             navController = bottomNavController,
             startDestination = Screen.Inicio.route,
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(paddingValues),
+            enterTransition = { fadeIn(animationSpec = tween(260)) },
+            exitTransition = { fadeOut(animationSpec = tween(260)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(260)) },
+            popExitTransition = { fadeOut(animationSpec = tween(260)) }
         ) {
             // Vistas compartidas
             composable(Screen.Inicio.route) {

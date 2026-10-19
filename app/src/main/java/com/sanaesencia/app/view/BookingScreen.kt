@@ -1,6 +1,9 @@
 package com.sanaesencia.app.view
 
+import android.Manifest
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.data.AppointmentEntity
+import com.sanaesencia.app.data.LocationHelper
 import com.sanaesencia.app.data.isCancelled
 import com.sanaesencia.app.data.mockProfessionals
 import com.sanaesencia.app.viewmodel.BookingViewModel
@@ -42,6 +46,67 @@ fun BookingScreen(
     val allAppointments by bookingViewModel.appointments.collectAsState()
     val state by bookingViewModel.uiState.collectAsState()
     val context = LocalContext.current
+
+    // Integración de GPS para orientar la elección de modalidad (Presencial vs Online)
+    val locationHelper = remember { LocationHelper(context) }
+    var isCheckingGps by remember { mutableStateOf(false) }
+    var gpsGpsSuggestion by remember { mutableStateOf<String?>(null) }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+        onResult = { permissions ->
+            val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                    permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+            if (granted) {
+                isCheckingGps = true
+                locationHelper.checkProximityToCenter { isNear, dist, err ->
+                    isCheckingGps = false
+                    if (err != null) {
+                        gpsGpsSuggestion = err
+                    } else {
+                        val distFormatted = String.format(Locale.getDefault(), "%.1f", dist)
+                        if (isNear) {
+                            bookingViewModel.onModeChanged(false)
+                            gpsGpsSuggestion = "GPS: Estás a $distFormatted km de la sede (<20 km). Sugerimos atención presencial."
+                        } else {
+                            bookingViewModel.onModeChanged(true)
+                            gpsGpsSuggestion = "GPS: Estás a $distFormatted km de Los Vilos (>20 km). Sugerimos atención Online vía MEDIlink."
+                        }
+                    }
+                }
+            } else {
+                gpsGpsSuggestion = "Permiso de ubicación denegado. Puedes seleccionar tu modalidad manualmente."
+            }
+        }
+    )
+
+    fun orientarModalidadGps() {
+        if (locationHelper.hasLocationPermission()) {
+            isCheckingGps = true
+            locationHelper.checkProximityToCenter { isNear, dist, err ->
+                isCheckingGps = false
+                if (err != null) {
+                    gpsGpsSuggestion = err
+                } else {
+                    val distFormatted = String.format(Locale.getDefault(), "%.1f", dist)
+                    if (isNear) {
+                        bookingViewModel.onModeChanged(false)
+                        gpsGpsSuggestion = "GPS: Estás a $distFormatted km de la sede (<20 km). Sugerimos atención presencial."
+                    } else {
+                        bookingViewModel.onModeChanged(true)
+                        gpsGpsSuggestion = "GPS: Estás a $distFormatted km de Los Vilos (>20 km). Sugerimos atención Online vía MEDIlink."
+                    }
+                }
+            }
+        } else {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
 
     // Cargar automáticamente los datos del paciente logueado
     LaunchedEffect(currentUser) {
@@ -346,6 +411,65 @@ fun BookingScreen(
                     label = { Text("Online (MEDIlink)") },
                     leadingIcon = { Icon(Icons.Default.Computer, contentDescription = null) }
                 )
+            }
+
+            // Asistente GPS para elección de modalidad (orientación presencial vs online)
+            AssistChip(
+                onClick = { orientarModalidadGps() },
+                label = {
+                    Text(
+                        if (isCheckingGps) "Consultando GPS..." else "Comprobar cercanía por GPS",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                },
+                leadingIcon = {
+                    if (isCheckingGps) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.MyLocation,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            )
+
+            AnimatedVisibility(
+                visible = gpsGpsSuggestion != null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                gpsGpsSuggestion?.let { suggestion ->
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = suggestion,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
             }
 
             // 6. INFORMACIÓN RELEVANTE / SÍNTOMAS PREVIOS

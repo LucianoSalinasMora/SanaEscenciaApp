@@ -3,8 +3,10 @@ package com.sanaesencia.app.view
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -50,9 +52,12 @@ fun ForgotPasswordScreen(
                 onValueChange = { run = it.replace("\n", "").replace("\r", ""); runError = false },
                 isError = runError,
                 label = { Text("Ingresa tu RUN") },
+                leadingIcon = {
+                    Icon(Icons.Default.Badge, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
                 singleLine = true,
                 maxLines = 1,
-                supportingText = { if (runError) Text("Usuario no encontrado") },
+                supportingText = { if (runError) Text("Usuario no encontrado", color = MaterialTheme.colorScheme.error) },
                 enabled = step == 1,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -60,7 +65,7 @@ fun ForgotPasswordScreen(
             if (step == 1) {
                 Button(
                     onClick = {
-                        viewModel.getUserByRun(run) { user ->
+                        viewModel.getUserByRun(run.trim()) { user ->
                             if (user != null) {
                                 fetchedUser = user
                                 step = 2
@@ -87,10 +92,13 @@ fun ForgotPasswordScreen(
                     value = answer,
                     onValueChange = { answer = it.replace("\n", "").replace("\r", ""); answerError = false },
                     label = { Text("Tu respuesta") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Key, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    },
                     singleLine = true,
                     maxLines = 1,
                     isError = answerError,
-                    supportingText = { if (answerError) Text("Respuesta incorrecta") },
+                    supportingText = { if (answerError) Text("Respuesta incorrecta", color = MaterialTheme.colorScheme.error) },
                     enabled = step == 2,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -98,7 +106,7 @@ fun ForgotPasswordScreen(
                 if (step == 2) {
                     Button(
                         onClick = {
-                            if (answer.equals(fetchedUser!!.securityAnswer, ignoreCase = true)) {
+                            if (answer.trim().equals(fetchedUser!!.securityAnswer.trim(), ignoreCase = true)) {
                                 step = 3
                             } else {
                                 answerError = true
@@ -120,19 +128,27 @@ fun ForgotPasswordScreen(
                     value = newPassword,
                     onValueChange = { newPassword = it.replace("\n", "").replace("\r", "") },
                     label = { Text("Nueva Contraseña") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    },
                     singleLine = true,
                     maxLines = 1,
                     visualTransformation = PasswordVisualTransformation(),
+                    supportingText = {
+                        if (newPassword.isNotBlank() && newPassword.length < 4) {
+                            Text("Mínimo 4 caracteres", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Button(
                     onClick = {
-                        viewModel.updatePassword(run, newPassword) {
+                        viewModel.updatePassword(run.trim(), newPassword.trim()) {
                             onPasswordResetSuccess()
                         }
                     },
-                    enabled = newPassword.isNotBlank(),
+                    enabled = newPassword.trim().length >= 4,
                     modifier = Modifier.fillMaxWidth().height(50.dp)
                 ) { Text("Guardar y Volver") }
             }
