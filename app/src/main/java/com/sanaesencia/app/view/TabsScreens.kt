@@ -28,6 +28,7 @@ import androidx.core.net.toUri
 import androidx.compose.ui.graphics.Color
 import com.sanaesencia.app.R
 import com.sanaesencia.app.data.AppointmentEntity
+import com.sanaesencia.app.data.isCancelled
 import com.sanaesencia.app.data.ContactHelper
 import com.sanaesencia.app.data.NosotrosManager
 import com.sanaesencia.app.data.NotificationHelper
@@ -55,6 +56,7 @@ fun DashboardScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
+        contentPadding = PaddingValues(bottom = 88.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -239,6 +241,7 @@ fun ProfileScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
+        contentPadding = PaddingValues(bottom = 88.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -354,14 +357,106 @@ private fun String?.isNullBraking(): Boolean = this.isNullOrBlank()
 @Composable
 fun AppointmentCard(
     appointment: AppointmentEntity,
-    onCancel: (() -> Unit)? = null
+    onCancel: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null
 ) {
     var isExpanded by remember { mutableStateOf(false) }
+    var mostrarConfirmacionCancelar by remember { mutableStateOf(false) }
+    var mostrarConfirmacionEliminar by remember { mutableStateOf(false) }
+
+    val isCancelled = appointment.isCancelled
+
     val animatedBg by animateColorAsState(
-        targetValue = if (isExpanded) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surface,
+        targetValue = when {
+            isCancelled -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
+            isExpanded -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+            else -> MaterialTheme.colorScheme.surface
+        },
         animationSpec = tween(durationMillis = 280),
         label = "cardBgColor"
     )
+
+    if (mostrarConfirmacionCancelar) {
+        AlertDialog(
+            onDismissRequest = { mostrarConfirmacionCancelar = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Confirmar Cancelación",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "¿Estás seguro de que deseas cancelar la cita de ${appointment.serviceType} con ${appointment.professionalName} agendada para el ${appointment.date} a las ${appointment.timeSlot}?\n\nAl cancelarla, desaparecerá de tus citas agendadas y el horario volverá a quedar disponible para otros pacientes."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        mostrarConfirmacionCancelar = false
+                        onCancel?.invoke()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Sí, cancelar cita")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarConfirmacionCancelar = false }) {
+                    Text("No, mantener cita")
+                }
+            }
+        )
+    }
+
+    if (mostrarConfirmacionEliminar) {
+        AlertDialog(
+            onDismissRequest = { mostrarConfirmacionEliminar = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.DeleteForever,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Eliminar Registro",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "¿Deseas eliminar definitivamente este registro de cita de la base de datos?"
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        mostrarConfirmacionEliminar = false
+                        onDelete?.invoke()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Eliminar definitivamente")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarConfirmacionEliminar = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     ElevatedCard(
         modifier = Modifier
@@ -379,13 +474,73 @@ fun AppointmentCard(
                 Text(
                     text = appointment.serviceType,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = if (isCancelled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
                 )
-                AssistChip(
-                    onClick = { isExpanded = !isExpanded },
-                    label = { Text(appointment.status) },
-                    leadingIcon = { Icon(Icons.Default.CheckCircle, contentDescription = null) }
-                )
+                Spacer(modifier = Modifier.width(8.dp))
+                if (isCancelled) {
+                    AssistChip(
+                        onClick = { isExpanded = !isExpanded },
+                        label = { Text("Cancelada", fontWeight = FontWeight.Bold) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            labelColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    )
+                } else {
+                    AssistChip(
+                        onClick = { isExpanded = !isExpanded },
+                        label = { Text(if (appointment.status.isBlank() || appointment.status.equals("Cancelada", ignoreCase = true)) "Agendada" else appointment.status) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            labelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
+                }
+            }
+
+            if (isCancelled) {
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Cita Cancelada - El box y horario fueron liberados",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -423,16 +578,34 @@ fun AppointmentCard(
                 }
             }
 
-            if (isExpanded && onCancel != null && appointment.status != "CANCELADA") {
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(
-                    onClick = onCancel,
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Cancelar Cita")
+            if (isExpanded) {
+                Spacer(modifier = Modifier.height(10.dp))
+                if (!isCancelled && onCancel != null) {
+                    Button(
+                        onClick = { mostrarConfirmacionCancelar = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Cancelar Cita", fontWeight = FontWeight.Bold)
+                    }
+                }
+                if (isCancelled && onDelete != null) {
+                    OutlinedButton(
+                        onClick = { mostrarConfirmacionEliminar = true },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Eliminar Registro de la Lista", fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }
@@ -694,15 +867,23 @@ fun AboutScreen(role: String = "PACIENTE") {
     }
 }
 
-// Cada usuario ve solo las citas que le corresponden (el admin ve todas)
+// Cada usuario ve solo las citas que le corresponden (el admin ve todas), excluyendo las canceladas
 private fun filtrarCitasPorUsuario(
     citas: List<AppointmentEntity>,
     user: UserEntity?
 ): List<AppointmentEntity> {
     if (user == null) return emptyList()
+    val activas = citas.filter { !it.isCancelled }
     return when (user.role) {
-        UserRole.PACIENTE -> citas.filter { it.patientRun == user.run }
-        UserRole.PROFESIONAL -> citas.filter { it.professionalName == user.name }
-        UserRole.ADMIN -> citas
+        UserRole.PACIENTE -> activas.filter { 
+            (user.run.isNotBlank() && it.patientRun.equals(user.run, ignoreCase = true)) || 
+            (user.email.isNotBlank() && it.patientEmail.equals(user.email, ignoreCase = true)) ||
+            (user.name.isNotBlank() && it.patientName.equals(user.name, ignoreCase = true))
+        }
+        UserRole.PROFESIONAL -> activas.filter { 
+            it.professionalName.equals(user.name, ignoreCase = true) ||
+            (user.run.isNotBlank() && it.professionalRun.equals(user.run, ignoreCase = true))
+        }
+        UserRole.ADMIN -> activas
     }
 }

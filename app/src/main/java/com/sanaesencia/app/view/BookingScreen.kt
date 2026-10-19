@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.data.AppointmentEntity
+import com.sanaesencia.app.data.isCancelled
 import com.sanaesencia.app.data.mockProfessionals
 import com.sanaesencia.app.viewmodel.BookingViewModel
 import com.sanaesencia.app.viewmodel.UserViewModel
@@ -118,7 +119,7 @@ fun BookingScreen(
                     cita.date == state.date &&
                     cita.professionalName.equals(state.professionalName, ignoreCase = true) &&
                     cita.timeSlot == slot &&
-                    !cita.state.equals("CANCELADA", ignoreCase = true)
+                    !cita.isCancelled
                 }
             } else {
                 false

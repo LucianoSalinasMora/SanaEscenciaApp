@@ -24,7 +24,7 @@ class AppointmentRepository(private val appointmentDao: AppointmentDao) {
     }
 
     suspend fun cancelAppointment(id: Long) {
-        appointmentDao.updateAppointmentState(id, "CANCELADA")
+        appointmentDao.updateAppointmentState(id, "CANCELADA", "Cancelada")
     }
 
     suspend fun deleteAppointment(id: Long) {

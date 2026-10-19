@@ -21,3 +21,8 @@ data class AppointmentEntity(
     val state: String = "PENDIENTE",
     val patientNotes: String = ""
 )
+
+val AppointmentEntity.isCancelled: Boolean
+    get() = state.equals("CANCELADA", ignoreCase = true) ||
+            status.equals("Cancelada", ignoreCase = true) ||
+            status.equals("CANCELADA", ignoreCase = true)
