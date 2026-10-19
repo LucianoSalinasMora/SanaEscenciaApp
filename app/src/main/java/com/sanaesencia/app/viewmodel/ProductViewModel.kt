@@ -26,6 +26,8 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
             initialValue = emptyList()
         )
 
+    val products: StateFlow<List<ProductEntity>> get() = allProducts
+
     init {
         viewModelScope.launch {
             repository.seedInitialProducts()
@@ -67,12 +69,4 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
     }
 }
 
-class ProductViewModelFactory(private val repository: ProductRepository) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ProductViewModel::class.java)) {
-            return ProductViewModel(repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
-    }
-}
+

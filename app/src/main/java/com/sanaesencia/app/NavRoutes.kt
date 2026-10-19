@@ -1,6 +1,7 @@
 package com.sanaesencia.app
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -35,6 +36,6 @@ sealed class Screen(
 
     // Tabs de Administrador (NUEVOS/MODIFICADOS)
     object ManageProducts : Screen("manage_products", "Productos", Icons.Default.Inventory)
-    object ManageSchedule : Screen("manage_schedule", "Citas", Icons.Default.EventNote)
+    object ManageSchedule : Screen("manage_schedule", "Citas", Icons.AutoMirrored.Filled.EventNote)
     object AdminProfessionals : Screen("admin_professionals", "Gestión", Icons.Default.ManageAccounts)
 }

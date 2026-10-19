@@ -56,7 +56,7 @@ fun MyPatientsScreen(bookingViewModel: BookingViewModel) {
                 items(appointments) { appointment ->
                     AppointmentCard(
                         appointment = appointment,
-                        onCancel = { id -> bookingViewModel.cancelAppointment(id) }
+                        onCancel = { bookingViewModel.cancelAppointment(appointment.id) }
                     )
                 }
             }

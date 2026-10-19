@@ -10,7 +10,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.sanaesencia.app.viewmodel.ProductViewModel
 import com.sanaesencia.app.viewmodel.UserViewModel
 
 @Composable
@@ -20,7 +19,6 @@ fun ServiciosCatalogoScreen(
     onVerProductos: () -> Unit = {}
 ) {
     val profesionales by userViewModel.professionals.collectAsState()
-    val products by productViewModel.products.collectAsState()
 
     // Agrupa a los profesionales por especialidad y ordena las especialidades alfabéticamente
     val grupos = profesionales

@@ -39,31 +39,48 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
         }
     }
 
-    fun onAreaChanged(area: String, defaultProfessional: String = "") {
+    fun getAvailableProfessionals(dbProfessionals: List<UserEntity> = emptyList(), area: String): List<String> {
+        val filteredFromDb = dbProfessionals.filter { it.specialty.equals(area, ignoreCase = true) }.map { it.name }
+        return if (filteredFromDb.isNotEmpty()) {
+            filteredFromDb
+        } else {
+            val filteredFromMock = mockProfessionals.filter { it.specialty.equals(area, ignoreCase = true) }.map { it.name }
+            if (filteredFromMock.isNotEmpty()) filteredFromMock else listOf("Centro Sanaesencia")
+        }
+    }
+
+    fun onAreaChanged(area: String, defaultProfessional: String = "", dbProfessionals: List<UserEntity> = emptyList()) {
+        val pro = if (defaultProfessional.isNotBlank()) {
+            defaultProfessional
+        } else {
+            val pros = getAvailableProfessionals(dbProfessionals, area)
+            pros.firstOrNull() ?: ""
+        }
         _uiState.update { current ->
             current.copy(
                 serviceType = area,
-                professionalName = defaultProfessional
+                professionalName = pro,
+                errorMessage = null
             )
         }
-        validateForm()
+        validateForm(dbProfessionals)
     }
 
     fun onSpecialtySelected(service: String) {
-        onAreaChanged(service, emptyList())
+        onAreaChanged(service)
     }
 
-    fun onProfessionalChanged(professional: String, dbProfessionals: List<UserEntity>) {
+    fun onProfessionalChanged(professional: String, dbProfessionals: List<UserEntity> = emptyList()) {
         _uiState.update { it.copy(professionalName = professional, errorMessage = null) }
         validateForm(dbProfessionals)
     }
 
-    fun onDateChanged(newValue: String, dbProfessionals: List<UserEntity>) {
+    fun onDateChanged(newValue: String, dbProfessionals: List<UserEntity> = emptyList()) {
         _uiState.update { it.copy(date = newValue, errorMessage = null) }
         validateForm(dbProfessionals)
     }
 
-    fun onTimeSlotChanged(newValue: String, dbProfessionals: List<UserEntity>) {
+    fun onTimeSlotChanged(newValue: String, dbProfessionals: List<UserEntity> = emptyList()) {
         _uiState.update { it.copy(timeSlot = newValue, errorMessage = null) }
         validateForm(dbProfessionals)
     }
@@ -76,10 +93,14 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
         _uiState.update { it.copy(isOnline = isOnline) }
     }
 
-    private fun validateForm(dbProfessionals: List<UserEntity>) {
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    private fun validateForm(dbProfessionals: List<UserEntity> = emptyList()) {
         val state = _uiState.value
         val availablePros = getAvailableProfessionals(dbProfessionals, state.serviceType)
-        val isProValid = availablePros.contains(state.professionalName)
+        val isProValid = state.professionalName.isNotBlank() && (availablePros.isEmpty() || availablePros.contains(state.professionalName))
 
         val isValid = state.serviceType.isNotBlank() &&
                 state.professionalName.isNotBlank() &&

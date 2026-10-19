@@ -33,7 +33,6 @@ import com.sanaesencia.app.data.AppNotification
 import com.sanaesencia.app.data.NotificationCategory
 import com.sanaesencia.app.data.NotificationHelper
 import com.sanaesencia.app.data.UserRole
-import com.sanaesencia.app.viewmodel.AboutViewModel
 import com.sanaesencia.app.viewmodel.BookingViewModel
 import com.sanaesencia.app.viewmodel.ProductViewModel
 import com.sanaesencia.app.viewmodel.UserViewModel
@@ -227,7 +226,7 @@ fun MainScreen(
             }
             composable(Screen.Profile.route) { ProfileScreen(userViewModel = userViewModel, bookingViewModel = bookingViewModel) }
             composable(Screen.About.route) {
-                NosotrosScreen(role = userRole, aboutViewModel = aboutViewModel)
+                NosotrosScreen(role = userRole)
             }
 
             // Vistas de Paciente
