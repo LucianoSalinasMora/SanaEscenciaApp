@@ -25,4 +25,16 @@ interface AppointmentDao {
     // Cambiar el estado de una cita
     @Query("UPDATE appointments SET state = :newState WHERE id = :appointmentId")
     suspend fun updateAppointmentState(appointmentId: Long, newState: String)
+
+    // Verificar si ya existe una cita activa para el profesional en esa fecha y horario
+    @Query("SELECT COUNT(*) FROM appointments WHERE date = :date AND professionalName = :professionalName AND timeSlot = :timeSlot AND state != 'CANCELADA'")
+    suspend fun countConflictAppointments(date: String, professionalName: String, timeSlot: String): Int
+
+    // Obtener qué boxes presenciales ya están ocupados en esa fecha y horario
+    @Query("SELECT boxNumber FROM appointments WHERE date = :date AND timeSlot = :timeSlot AND isOnline = 0 AND state != 'CANCELADA' AND boxNumber IS NOT NULL")
+    suspend fun getOccupiedBoxes(date: String, timeSlot: String): List<Int>
+
+    // Eliminar una cita por su ID
+    @Query("DELETE FROM appointments WHERE id = :appointmentId")
+    suspend fun deleteAppointment(appointmentId: Long)
 }

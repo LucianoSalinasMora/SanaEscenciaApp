@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import com.sanaesencia.app.data.AppDatabase
 import com.sanaesencia.app.data.AppointmentRepository
 import com.sanaesencia.app.data.NotificationHelper
+import com.sanaesencia.app.data.ProductRepository
 import com.sanaesencia.app.data.UserRepository
 import com.sanaesencia.app.data.UserRole
 import com.sanaesencia.app.ui.theme.SanaesenciaTheme
@@ -25,6 +26,8 @@ import com.sanaesencia.app.view.MainScreen
 import com.sanaesencia.app.view.SignUpScreen
 import com.sanaesencia.app.viewmodel.BookingViewModel
 import com.sanaesencia.app.viewmodel.BookingViewModelFactory
+import com.sanaesencia.app.viewmodel.ProductViewModel
+import com.sanaesencia.app.viewmodel.ProductViewModelFactory
 import com.sanaesencia.app.viewmodel.UserViewModel
 import com.sanaesencia.app.viewmodel.UserViewModelFactory
 
@@ -40,6 +43,9 @@ class MainActivity : ComponentActivity() {
         // 1. Inicializamos el repositorio de usuarios
         val userRepository = UserRepository(database.userDao())
 
+        // 2. Inicializamos el repositorio de productos
+        val productRepository = ProductRepository(database.productDao())
+
         setContent {
             SanaesenciaTheme {
                 Surface(
@@ -50,9 +56,12 @@ class MainActivity : ComponentActivity() {
                         factory = BookingViewModelFactory(repository)
                     )
 
-                    // 2. Inicializamos el ViewModel de usuarios
                     val userViewModel: UserViewModel = viewModel(
                         factory = UserViewModelFactory(userRepository)
+                    )
+
+                    val productViewModel: ProductViewModel = viewModel(
+                        factory = ProductViewModelFactory(productRepository)
                     )
 
                     val navController = rememberNavController()
@@ -109,6 +118,7 @@ class MainActivity : ComponentActivity() {
                                 userRole = role,
                                 userViewModel = userViewModel,
                                 bookingViewModel = bookingViewModel,
+                                productViewModel = productViewModel,
                                 notificationHelper = notificationHelper,
                                 onLogout = {
                                     navController.navigate(Screen.Login.route) {

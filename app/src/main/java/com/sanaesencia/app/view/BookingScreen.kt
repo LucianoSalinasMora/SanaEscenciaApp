@@ -1,5 +1,6 @@
 package com.sanaesencia.app.view
 
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.data.AppointmentEntity
 import com.sanaesencia.app.data.mockProfessionals
@@ -21,6 +23,7 @@ import com.sanaesencia.app.viewmodel.UserViewModel
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
@@ -35,7 +38,9 @@ fun BookingScreen(
 ) {
     val currentUser by userViewModel.currentUser.collectAsState()
     val dbProfessionals by userViewModel.professionals.collectAsState()
+    val allAppointments by bookingViewModel.appointments.collectAsState()
     val state by bookingViewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     // Cargar automáticamente los datos del paciente logueado
     LaunchedEffect(currentUser) {
@@ -60,19 +65,31 @@ fun BookingScreen(
         "Acupuntura"
     )
 
-    // Filtrar profesionales disponibles según la especialidad seleccionada
-    val availableProfessionals = remember(state.serviceType, dbProfessionals) {
-        val filteredFromDb = dbProfessionals.filter { it.specialty.equals(state.serviceType, ignoreCase = true) }.map { it.name }
-        if (filteredFromDb.isNotEmpty()) {
+    // Función para obtener profesionales de un área específica
+    fun getProfessionalsForArea(area: String): List<String> {
+        val filteredFromDb = dbProfessionals.filter { it.specialty.equals(area, ignoreCase = true) }.map { it.name }
+        return if (filteredFromDb.isNotEmpty()) {
             filteredFromDb
         } else {
-            val filteredFromMock = mockProfessionals.filter { it.specialty.equals(state.serviceType, ignoreCase = true) }.map { it.name }
-            if (filteredFromMock.isNotEmpty()) filteredFromMock else listOf("Dr. Carlos Mendoza", "Dra. María Paz Silva", "Lic. Andrea Rojas", "Centro Sanaesencia")
+            val filteredFromMock = mockProfessionals.filter { it.specialty.equals(area, ignoreCase = true) }.map { it.name }
+            if (filteredFromMock.isNotEmpty()) filteredFromMock else listOf("Centro Sanaesencia")
         }
     }
 
-    // Opciones de Horarios disponibles
-    val timeSlots = listOf(
+    // Filtrar profesionales disponibles según la especialidad seleccionada
+    val availableProfessionals = remember(state.serviceType, dbProfessionals) {
+        getProfessionalsForArea(state.serviceType)
+    }
+
+    // Preseleccionar automáticamente el primer profesional del área si el actual no pertenece a la misma
+    LaunchedEffect(state.serviceType, availableProfessionals) {
+        if (availableProfessionals.isNotEmpty() && state.professionalName !in availableProfessionals) {
+            bookingViewModel.onProfessionalChanged(availableProfessionals.first())
+        }
+    }
+
+    // Lista de todos los posibles bloques de horario
+    val allTimeSlots = listOf(
         "09:00 AM",
         "10:00 AM",
         "11:00 AM",
@@ -81,6 +98,42 @@ fun BookingScreen(
         "16:00 PM",
         "17:00 PM"
     )
+
+    // Filtrar horarios disponibles: no pasados si es hoy, y no ocupados con el profesional
+    val availableTimeSlots = remember(state.date, state.professionalName, allAppointments) {
+        val todayStr = LocalDate.now().toString()
+        val now = LocalTime.now()
+
+        allTimeSlots.filter { slot ->
+            // 1. Si la fecha es hoy, descartar si la hora ya pasó
+            val isPassedToday = if (state.date == todayStr) {
+                now.isAfter(parseSlotToLocalTime(slot))
+            } else {
+                false
+            }
+
+            // 2. Descartar si el profesional ya tiene una cita activa agendada en esa fecha y horario
+            val isTakenByProfessional = if (state.date.isNotBlank() && state.professionalName.isNotBlank()) {
+                allAppointments.any { cita ->
+                    cita.date == state.date &&
+                    cita.professionalName.equals(state.professionalName, ignoreCase = true) &&
+                    cita.timeSlot == slot &&
+                    !cita.state.equals("CANCELADA", ignoreCase = true)
+                }
+            } else {
+                false
+            }
+
+            !isPassedToday && !isTakenByProfessional
+        }
+    }
+
+    // Si el horario previamente seleccionado ya no está disponible, limpiarlo
+    LaunchedEffect(availableTimeSlots) {
+        if (state.timeSlot.isNotBlank() && state.timeSlot !in availableTimeSlots) {
+            bookingViewModel.onTimeSlotChanged("")
+        }
+    }
 
     var areaExpanded by remember { mutableStateOf(false) }
     var proExpanded by remember { mutableStateOf(false) }
@@ -152,7 +205,9 @@ fun BookingScreen(
                         DropdownMenuItem(
                             text = { Text(area) },
                             onClick = {
-                                bookingViewModel.onAreaChanged(area)
+                                val pros = getProfessionalsForArea(area)
+                                val firstPro = pros.firstOrNull() ?: ""
+                                bookingViewModel.onAreaChanged(area, firstPro)
                                 areaExpanded = false
                             }
                         )
@@ -213,28 +268,38 @@ fun BookingScreen(
 
             // 4. SELECCIÓN DE HORARIO
             Text("4. Horario / Módulo Disponible", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                timeSlots.take(4).forEach { slot ->
-                    FilterChip(
-                        selected = state.timeSlot == slot,
-                        onClick = { bookingViewModel.onTimeSlotChanged(slot) },
-                        label = { Text(slot, style = MaterialTheme.typography.labelSmall) }
+            if (state.date.isBlank()) {
+                Text(
+                    text = "Seleccione una fecha de atención en el paso anterior para ver los horarios disponibles.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            } else if (availableTimeSlots.isEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f))
+                ) {
+                    Text(
+                        text = "No quedan horarios disponibles para esta fecha con el profesional seleccionado. Por favor seleccione otra fecha u otro profesional.",
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
                     )
                 }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                timeSlots.drop(4).forEach { slot ->
-                    FilterChip(
-                        selected = state.timeSlot == slot,
-                        onClick = { bookingViewModel.onTimeSlotChanged(slot) },
-                        label = { Text(slot, style = MaterialTheme.typography.labelSmall) }
-                    )
+            } else {
+                availableTimeSlots.chunked(4).forEach { rowSlots ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        rowSlots.forEach { slot ->
+                            FilterChip(
+                                selected = state.timeSlot == slot,
+                                onClick = { bookingViewModel.onTimeSlotChanged(slot) },
+                                label = { Text(slot, style = MaterialTheme.typography.labelSmall) }
+                            )
+                        }
+                    }
                 }
             }
 
@@ -296,9 +361,14 @@ fun BookingScreen(
 
             Button(
                 onClick = {
-                    bookingViewModel.submitBooking { appointment ->
-                        onBookingSuccess(appointment)
-                    }
+                    bookingViewModel.submitBooking(
+                        onSuccess = { appointment ->
+                            onBookingSuccess(appointment)
+                        },
+                        onError = { errorMsg ->
+                            Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+                        }
+                    )
                 },
                 enabled = state.isFormValid,
                 modifier = Modifier
@@ -353,4 +423,20 @@ object DateValidators {
             return !isPast && !isWeekend
         }
     }
+}
+
+private fun parseSlotToLocalTime(slot: String): LocalTime {
+    val clean = slot.trim()
+    val parts = clean.split(" ")
+    val timeParts = parts.getOrNull(0)?.split(":") ?: emptyList()
+    var hour = timeParts.getOrNull(0)?.toIntOrNull() ?: 0
+    val minute = timeParts.getOrNull(1)?.toIntOrNull() ?: 0
+    val isPm = parts.getOrNull(1)?.equals("PM", ignoreCase = true) == true
+
+    if (isPm && hour in 1..11) {
+        hour += 12
+    } else if (!isPm && hour == 12) {
+        hour = 0
+    }
+    return LocalTime.of(hour.coerceIn(0, 23), minute.coerceIn(0, 59))
 }

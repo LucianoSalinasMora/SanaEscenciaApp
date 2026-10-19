@@ -39,8 +39,13 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
         }
     }
 
-    fun onAreaChanged(area: String) {
-        _uiState.update { it.copy(serviceType = area) }
+    fun onAreaChanged(area: String, defaultProfessional: String = "") {
+        _uiState.update { current ->
+            current.copy(
+                serviceType = area,
+                professionalName = defaultProfessional
+            )
+        }
         validateForm()
     }
 
@@ -81,11 +86,48 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
         _uiState.update { it.copy(isFormValid = isValid) }
     }
 
-    fun submitBooking(onSuccess: (AppointmentEntity) -> Unit) {
-        if (!_uiState.value.isFormValid) return
+    fun cancelAppointment(id: Long, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.cancelAppointment(id)
+            onSuccess()
+        }
+    }
+
+    fun deleteAppointment(id: Long, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            repository.deleteAppointment(id)
+            onSuccess()
+        }
+    }
+
+    fun submitBooking(
+        onSuccess: (AppointmentEntity) -> Unit,
+        onError: ((String) -> Unit)? = null
+    ) {
+        if (!_uiState.value.isFormValid) {
+            onError?.invoke("Por favor complete todos los campos requeridos")
+            return
+        }
 
         viewModelScope.launch {
             val state = _uiState.value
+
+            // 1. Validar directamente en SQLite Room que el horario no esté tomado
+            val alreadyTaken = repository.isSlotTaken(
+                date = state.date.trim(),
+                professionalName = state.professionalName.trim(),
+                timeSlot = state.timeSlot.trim()
+            )
+            if (alreadyTaken) {
+                onError?.invoke("Este horario ya ha sido reservado con el profesional.")
+                return@launch
+            }
+
+            // 2. Para modalidad presencial, buscar un box libre (1..8) para evitar colisiones de sala
+            val occupiedBoxes = repository.getOccupiedBoxes(state.date.trim(), state.timeSlot.trim())
+            val freeBoxes = (1..8).filter { it !in occupiedBoxes }
+            val assignedBox = if (state.isOnline) null else (freeBoxes.firstOrNull() ?: (1..8).random())
+
             val entity = AppointmentEntity(
                 patientName = state.patientName.ifBlank { "Paciente Registrado" },
                 patientEmail = state.patientEmail,
@@ -96,7 +138,7 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
                 date = state.date,
                 timeSlot = state.timeSlot,
                 isOnline = state.isOnline,
-                boxNumber = if (state.isOnline) null else (1..8).random(),
+                boxNumber = assignedBox,
                 patientNotes = state.notes
             )
 
@@ -104,6 +146,8 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
             if (success) {
                 _uiState.update { it.copy(isSubmittedSuccessfully = true) }
                 onSuccess(entity)
+            } else {
+                onError?.invoke("Error al guardar la cita en el sistema.")
             }
         }
     }

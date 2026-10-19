@@ -2,6 +2,9 @@ package com.sanaesencia.app.view
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,8 +25,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.compose.ui.graphics.Color
 import com.sanaesencia.app.R
 import com.sanaesencia.app.data.AppointmentEntity
+import com.sanaesencia.app.data.ContactHelper
+import com.sanaesencia.app.data.NosotrosManager
 import com.sanaesencia.app.data.NotificationHelper
 import com.sanaesencia.app.data.UserEntity
 import com.sanaesencia.app.data.UserRole
@@ -193,7 +199,14 @@ fun DashboardScreen(
             }
         } else {
             items(appointments) { appointment ->
-                AppointmentCard(appointment)
+                AppointmentCard(
+                    appointment = appointment,
+                    onCancel = {
+                        viewModel.cancelAppointment(appointment.id) {
+                            Toast.makeText(context, "Cita cancelada exitosamente", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
             }
         }
     }
@@ -323,7 +336,14 @@ fun ProfileScreen(
             }
         } else {
             items(appointments) { appointment ->
-                AppointmentCard(appointment)
+                AppointmentCard(
+                    appointment = appointment,
+                    onCancel = {
+                        bookingViewModel.cancelAppointment(appointment.id) {
+                            Toast.makeText(context, "Cita cancelada exitosamente", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
             }
         }
     }
@@ -332,10 +352,23 @@ fun ProfileScreen(
 private fun String?.isNullBraking(): Boolean = this.isNullOrBlank()
 
 @Composable
-fun AppointmentCard(appointment: AppointmentEntity) {
+fun AppointmentCard(
+    appointment: AppointmentEntity,
+    onCancel: (() -> Unit)? = null
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    val animatedBg by animateColorAsState(
+        targetValue = if (isExpanded) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surface,
+        animationSpec = tween(durationMillis = 280),
+        label = "cardBgColor"
+    )
+
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(animationSpec = tween(durationMillis = 280))
+            .clickable { isExpanded = !isExpanded },
+        colors = CardDefaults.elevatedCardColors(containerColor = animatedBg)
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
@@ -349,7 +382,7 @@ fun AppointmentCard(appointment: AppointmentEntity) {
                     color = MaterialTheme.colorScheme.primary
                 )
                 AssistChip(
-                    onClick = { },
+                    onClick = { isExpanded = !isExpanded },
                     label = { Text(appointment.status) },
                     leadingIcon = { Icon(Icons.Default.CheckCircle, contentDescription = null) }
                 )
@@ -389,6 +422,19 @@ fun AppointmentCard(appointment: AppointmentEntity) {
                     Text("Nota/Motivo: ${appointment.patientNotes}", style = MaterialTheme.typography.bodySmall)
                 }
             }
+
+            if (isExpanded && onCancel != null && appointment.status != "CANCELADA") {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onCancel,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Cancelar Cita")
+                }
+            }
         }
     }
 }
@@ -412,6 +458,12 @@ fun ProfessionalsScreen() {
 @Composable
 fun AboutScreen(role: String = "PACIENTE") {
     val context = LocalContext.current
+    val nosotrosInfo by NosotrosManager.infoState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        NosotrosManager.init(context)
+    }
+
     val mapsUrl = "https://maps.app.goo.gl/3hFvN2dRbjQkc5vq5"
 
     fun openGoogleMaps() {
@@ -453,14 +505,14 @@ fun AboutScreen(role: String = "PACIENTE") {
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "Centro Médico y Holístico Sanaesencia",
+                        text = nosotrosInfo.title,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
 
                     Text(
-                        text = "Somos un centro interdisciplinario dedicado al cuidado de la salud integral, combinando medicina biorreguladora, kinesiología, psicología, aromaterapia y terapias complementarias presenciales en Los Vilos y atención online.",
+                        text = nosotrosInfo.description,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -480,7 +532,7 @@ fun AboutScreen(role: String = "PACIENTE") {
                     Box(modifier = Modifier.fillMaxWidth()) {
                         Image(
                             painter = painterResource(id = R.drawable.img_map_preview),
-                            contentDescription = "Mapa Ubicación Sanaesencia Caupolicán 220",
+                            contentDescription = "Mapa Ubicación Sanaesencia",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -535,7 +587,7 @@ fun AboutScreen(role: String = "PACIENTE") {
                         }
 
                         Text(
-                            text = "Caupolicán 220, Los Vilos, Región de Coquimbo, Chile",
+                            text = nosotrosInfo.address,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
@@ -582,13 +634,59 @@ fun AboutScreen(role: String = "PACIENTE") {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Contacto / WhatsApp: +56 9 1234 5678", style = MaterialTheme.typography.bodyMedium)
+                        Text("Contacto / WhatsApp: ${nosotrosInfo.phone}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Correo: ${nosotrosInfo.email}", style = MaterialTheme.typography.bodyMedium)
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Horario: Lunes a Viernes 09:00 - 19:00 hrs", style = MaterialTheme.typography.bodyMedium)
+                        Text("Horario: ${nosotrosInfo.schedule}", style = MaterialTheme.typography.bodyMedium)
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                ContactHelper.openWhatsApp(
+                                    context = context,
+                                    rawPhone = nosotrosInfo.phone,
+                                    message = "Hola Centro Sanaesencia, me gustaría solicitar información."
+                                )
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Chat, contentDescription = "WhatsApp", tint = Color.White, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Chatear por WhatsApp", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                ContactHelper.addContact(
+                                    context = context,
+                                    name = nosotrosInfo.title,
+                                    phone = nosotrosInfo.phone,
+                                    email = nosotrosInfo.email,
+                                    address = nosotrosInfo.address
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Guardar Contacto")
+                        }
                     }
                 }
             }

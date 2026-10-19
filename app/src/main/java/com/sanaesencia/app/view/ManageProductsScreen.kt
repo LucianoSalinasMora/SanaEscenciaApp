@@ -2,36 +2,27 @@ package com.sanaesencia.app.view
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-
-// Producto de ejemplo (datos ficticios, solo en memoria mientras la app está abierta)
-private data class ProductoEjemplo(
-    val nombre: String,
-    val descripcion: String,
-    val precio: Int,
-    val disponible: Boolean = true
-)
+import com.sanaesencia.app.data.ProductEntity
+import com.sanaesencia.app.viewmodel.ProductViewModel
 
 @Composable
-fun ManageProductsScreen() {
-    val productos = remember {
-        mutableStateListOf(
-            ProductoEjemplo("Kit de Bienestar", "Set de aromaterapia con roll-on y bruma.", 24990),
-            ProductoEjemplo("Roll-on Calma", "Aceites esenciales para momentos de estrés.", 7990),
-            ProductoEjemplo("Bruma de Almohada", "Bruma relajante para el descanso nocturno.", 9990),
-            ProductoEjemplo("Roll-on Foco", "Aroma para concentración y estudio.", 7990, false)
-        )
-    }
+fun ManageProductsScreen(viewModel: ProductViewModel) {
+    val productos by viewModel.allProducts.collectAsState()
+
     var mostrarDialogo by remember { mutableStateOf(false) }
+    var productoAEditar by remember { mutableStateOf<ProductEntity?>(null) }
 
     Column(
         modifier = Modifier
@@ -51,7 +42,10 @@ fun ManageProductsScreen() {
                 )
                 Text("Productos Sanaesencia", style = MaterialTheme.typography.headlineSmall)
             }
-            Button(onClick = { mostrarDialogo = true }) {
+            Button(onClick = {
+                productoAEditar = null
+                mostrarDialogo = true
+            }) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("Nuevo")
@@ -60,43 +54,73 @@ fun ManageProductsScreen() {
 
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            "Línea propia de productos naturales: kits, roll-ons y brumas (datos de ejemplo).",
+            "Línea propia de productos naturales: kits, roll-ons y brumas disponibles para pacientes.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.secondary
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            itemsIndexed(productos) { index, producto ->
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(producto.nombre, style = MaterialTheme.typography.titleMedium)
-                            Text(producto.descripcion, style = MaterialTheme.typography.bodySmall)
-                            Text(
-                                "Precio: ${producto.precio} CLP",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Switch(
-                                checked = producto.disponible,
-                                onCheckedChange = { productos[index] = producto.copy(disponible = it) }
-                            )
-                            Text(
-                                if (producto.disponible) "Disponible" else "Agotado",
-                                style = MaterialTheme.typography.labelSmall
-                            )
+        if (productos.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Text(
+                    text = "No hay productos registrados aún. Presiona 'Nuevo' para agregar el primero.",
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(productos, key = { it.id }) { producto ->
+                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(producto.name, style = MaterialTheme.typography.titleMedium)
+                                Text(producto.description, style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    "Precio: ${producto.price.toInt()} CLP",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Switch(
+                                    checked = producto.isAvailable,
+                                    onCheckedChange = { viewModel.toggleAvailability(producto) }
+                                )
+                                Text(
+                                    if (producto.isAvailable) "Disponible" else "Agotado",
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                                Row {
+                                    IconButton(onClick = {
+                                        productoAEditar = producto
+                                        mostrarDialogo = true
+                                    }) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Editar", modifier = Modifier.size(18.dp))
+                                    }
+                                    IconButton(onClick = { viewModel.deleteProduct(producto) }) {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = "Eliminar",
+                                            tint = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -105,27 +129,30 @@ fun ManageProductsScreen() {
     }
 
     if (mostrarDialogo) {
-        var nombre by remember { mutableStateOf("") }
-        var descripcion by remember { mutableStateOf("") }
-        var precio by remember { mutableStateOf("") }
+        var nombre by remember(productoAEditar) { mutableStateOf(productoAEditar?.name ?: "") }
+        var descripcion by remember(productoAEditar) { mutableStateOf(productoAEditar?.description ?: "") }
+        var precio by remember(productoAEditar) { mutableStateOf(productoAEditar?.price?.toInt()?.toString() ?: "") }
         val precioNum = precio.toIntOrNull()
 
         AlertDialog(
             onDismissRequest = { mostrarDialogo = false },
-            title = { Text("Nuevo producto") },
+            title = { Text(if (productoAEditar == null) "Nuevo producto" else "Editar producto") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = nombre,
-                        onValueChange = { nombre = it },
+                        onValueChange = { nombre = it.replace("\n", "") },
                         label = { Text("Nombre") },
                         singleLine = true,
+                        maxLines = 1,
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = descripcion,
-                        onValueChange = { descripcion = it },
+                        onValueChange = { descripcion = it.replace("\n", "") },
                         label = { Text("Descripción") },
+                        singleLine = true,
+                        maxLines = 1,
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
@@ -134,6 +161,7 @@ fun ManageProductsScreen() {
                         label = { Text("Precio (CLP)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
+                        maxLines = 1,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -141,9 +169,23 @@ fun ManageProductsScreen() {
             confirmButton = {
                 Button(
                     onClick = {
-                        productos.add(
-                            ProductoEjemplo(nombre.trim(), descripcion.trim(), precioNum ?: 0)
-                        )
+                        val pr = productoAEditar
+                        if (pr != null) {
+                            viewModel.updateProduct(
+                                pr.copy(
+                                    name = nombre.trim(),
+                                    description = descripcion.trim(),
+                                    price = (precioNum ?: 0).toDouble()
+                                )
+                            )
+                        } else {
+                            viewModel.addProduct(
+                                name = nombre.trim(),
+                                description = descripcion.trim(),
+                                price = (precioNum ?: 0).toDouble(),
+                                isAvailable = true
+                            )
+                        }
                         mostrarDialogo = false
                     },
                     enabled = nombre.trim().length >= 3 && precioNum != null

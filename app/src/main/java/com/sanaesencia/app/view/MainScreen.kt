@@ -34,6 +34,7 @@ import com.sanaesencia.app.data.NotificationCategory
 import com.sanaesencia.app.data.NotificationHelper
 import com.sanaesencia.app.data.UserRole
 import com.sanaesencia.app.viewmodel.BookingViewModel
+import com.sanaesencia.app.viewmodel.ProductViewModel
 import com.sanaesencia.app.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +44,7 @@ fun MainScreen(
     userRole: String, // Recibe "PACIENTE", "PROFESIONAL" o "ADMIN"
     userViewModel: UserViewModel,
     bookingViewModel: BookingViewModel,
+    productViewModel: ProductViewModel,
     notificationHelper: NotificationHelper,
     onLogout: () -> Unit // Acción para cerrar sesión
 ) {
@@ -101,6 +103,7 @@ fun MainScreen(
         else -> listOf( // PACIENTE por defecto
             Screen.Inicio,
             Screen.Catalog,
+            Screen.PatientProducts,
             Screen.About,
             Screen.Profile
         )
@@ -242,8 +245,12 @@ fun MainScreen(
             composable(Screen.Catalog.route) {
                 ServiciosCatalogoScreen(
                     userViewModel = userViewModel,
-                    onAgendar = { parentNavController.navigate(Screen.Booking.route) }
+                    onAgendar = { parentNavController.navigate(Screen.Booking.route) },
+                    onVerProductos = { bottomNavController.navigate(Screen.PatientProducts.route) }
                 )
+            }
+            composable(Screen.PatientProducts.route) {
+                PatientProductsScreen(productViewModel = productViewModel)
             }
 
             // Vistas de Profesional
@@ -257,7 +264,7 @@ fun MainScreen(
             composable(Screen.MySchedule.route) { MyScheduleScreen(bookingViewModel = bookingViewModel, userViewModel = userViewModel) }
 
             // Vistas de Administrador
-            composable(Screen.ManageProducts.route) { ManageProductsScreen() }
+            composable(Screen.ManageProducts.route) { ManageProductsScreen(viewModel = productViewModel) }
             composable(Screen.ManageSchedule.route) { ManageScheduleScreen(bookingViewModel = bookingViewModel) }
             composable(Screen.AdminProfessionals.route) { AdminProfessionalsScreen(viewModel = userViewModel) }
         }

@@ -26,6 +26,7 @@ sealed class Screen(
 
     // Tabs de Paciente
     object Catalog : Screen("catalog", "Servicios", Icons.Default.Spa)
+    object PatientProducts : Screen("patient_products", "Productos", Icons.Default.ShoppingBag)
     object About : Screen("about", "Nosotros", Icons.Default.Info)
 
     // Tabs de Profesional (NUEVOS)
