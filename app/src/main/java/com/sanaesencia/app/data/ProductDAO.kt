@@ -34,3 +34,4 @@ interface ProductDao {
     @Query("SELECT COUNT(*) FROM products")
     suspend fun getCount(): Int
 }
+
