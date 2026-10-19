@@ -12,6 +12,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.sanaesencia.app.data.AboutRepository
 import com.sanaesencia.app.data.AppDatabase
 import com.sanaesencia.app.data.AppointmentRepository
 import com.sanaesencia.app.data.NotificationHelper
@@ -24,6 +25,8 @@ import com.sanaesencia.app.view.ForgotPasswordScreen
 import com.sanaesencia.app.view.LoginScreen
 import com.sanaesencia.app.view.MainScreen
 import com.sanaesencia.app.view.SignUpScreen
+import com.sanaesencia.app.viewmodel.AboutViewModel
+import com.sanaesencia.app.viewmodel.AboutViewModelFactory
 import com.sanaesencia.app.viewmodel.BookingViewModel
 import com.sanaesencia.app.viewmodel.BookingViewModelFactory
 import com.sanaesencia.app.viewmodel.ProductViewModel
@@ -40,8 +43,10 @@ class MainActivity : ComponentActivity() {
         val repository = AppointmentRepository(database.appointmentDao())
         val notificationHelper = NotificationHelper(this)
 
-        // 1. Inicializamos el repositorio de usuarios
+        // 1. Inicializamos los repositorios
         val userRepository = UserRepository(database.userDao())
+        val productRepository = ProductRepository(database.productDao())
+        val aboutRepository = AboutRepository(database.aboutDao())
 
         // 2. Inicializamos el repositorio de productos
         val productRepository = ProductRepository(database.productDao())

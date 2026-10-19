@@ -12,5 +12,6 @@ data class BookingFormState(
     val notes: String = "",
     val isOnline: Boolean = false,
     val isFormValid: Boolean = false,
-    val isSubmittedSuccessfully: Boolean = false
+    val isSubmittedSuccessfully: Boolean = false,
+    val errorMessage: String? = null
 )

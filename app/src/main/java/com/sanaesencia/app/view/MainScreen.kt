@@ -33,6 +33,7 @@ import com.sanaesencia.app.data.AppNotification
 import com.sanaesencia.app.data.NotificationCategory
 import com.sanaesencia.app.data.NotificationHelper
 import com.sanaesencia.app.data.UserRole
+import com.sanaesencia.app.viewmodel.AboutViewModel
 import com.sanaesencia.app.viewmodel.BookingViewModel
 import com.sanaesencia.app.viewmodel.ProductViewModel
 import com.sanaesencia.app.viewmodel.UserViewModel
@@ -64,7 +65,7 @@ fun MainScreen(
     val notifications by NotificationHelper.notificationsState.collectAsState()
     val unreadCount = remember(notifications) { notifications.count { !it.isRead } }
 
-    // Launcher para pedir permiso POST_NOTIFICATIONS en Android 13+ (Solo si es Paciente)
+    // Launcher para pedir permiso POST_NOTIFICATIONS en Android 13+ (Solo si el usuario presiona permitir)
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
@@ -75,15 +76,6 @@ fun MainScreen(
             }
         }
     )
-
-    // Solicitar permiso automáticamente sólo para el rol PACIENTE en Android 13+
-    LaunchedEffect(userRole) {
-        if (isPaciente && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (!notificationHelper.hasNotificationPermission()) {
-                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-    }
 
     // Configuración de TABS según el Rol
     val navItems = when (userRole) {
@@ -230,15 +222,12 @@ fun MainScreen(
             composable(Screen.Inicio.route) {
                 DashboardScreen(
                     viewModel = bookingViewModel,
-                    userViewModel = userViewModel,
-                    notificationHelper = notificationHelper,
                     role = userRole
                 )
             }
             composable(Screen.Profile.route) { ProfileScreen(userViewModel = userViewModel, bookingViewModel = bookingViewModel) }
             composable(Screen.About.route) {
-                // El admin ve Nosotros + gestión de reseñas; los demás ven la pantalla con mapa
-                if (userRole == UserRole.ADMIN.name) NosotrosScreen(role = userRole) else AboutScreen(role = userRole)
+                NosotrosScreen(role = userRole, aboutViewModel = aboutViewModel)
             }
 
             // Vistas de Paciente
@@ -256,9 +245,7 @@ fun MainScreen(
             // Vistas de Profesional
             composable(Screen.MyPatients.route) {
                 MyPatientsScreen(
-                    bookingViewModel = bookingViewModel,
-                    userViewModel = userViewModel,
-                    notificationHelper = notificationHelper
+                    bookingViewModel = bookingViewModel
                 )
             }
             composable(Screen.MySchedule.route) { MyScheduleScreen(bookingViewModel = bookingViewModel, userViewModel = userViewModel) }

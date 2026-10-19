@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.sanaesencia.app.data.AppointmentEntity
 import com.sanaesencia.app.data.AppointmentRepository
 import com.sanaesencia.app.data.UserEntity
+import com.sanaesencia.app.data.mockProfessionals
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,7 +36,6 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
                     patientRun = patient.run
                 )
             }
-            validateForm()
         }
     }
 
@@ -50,22 +50,22 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
     }
 
     fun onSpecialtySelected(service: String) {
-        onAreaChanged(service)
+        onAreaChanged(service, emptyList())
     }
 
-    fun onProfessionalChanged(professional: String) {
-        _uiState.update { it.copy(professionalName = professional) }
-        validateForm()
+    fun onProfessionalChanged(professional: String, dbProfessionals: List<UserEntity>) {
+        _uiState.update { it.copy(professionalName = professional, errorMessage = null) }
+        validateForm(dbProfessionals)
     }
 
-    fun onDateChanged(newValue: String) {
-        _uiState.update { it.copy(date = newValue) }
-        validateForm()
+    fun onDateChanged(newValue: String, dbProfessionals: List<UserEntity>) {
+        _uiState.update { it.copy(date = newValue, errorMessage = null) }
+        validateForm(dbProfessionals)
     }
 
-    fun onTimeSlotChanged(newValue: String) {
-        _uiState.update { it.copy(timeSlot = newValue) }
-        validateForm()
+    fun onTimeSlotChanged(newValue: String, dbProfessionals: List<UserEntity>) {
+        _uiState.update { it.copy(timeSlot = newValue, errorMessage = null) }
+        validateForm(dbProfessionals)
     }
 
     fun onNotesChanged(newValue: String) {
@@ -76,10 +76,14 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
         _uiState.update { it.copy(isOnline = isOnline) }
     }
 
-    private fun validateForm() {
+    private fun validateForm(dbProfessionals: List<UserEntity>) {
         val state = _uiState.value
+        val availablePros = getAvailableProfessionals(dbProfessionals, state.serviceType)
+        val isProValid = availablePros.contains(state.professionalName)
+
         val isValid = state.serviceType.isNotBlank() &&
                 state.professionalName.isNotBlank() &&
+                isProValid &&
                 state.date.isNotBlank() &&
                 state.timeSlot.isNotBlank()
 
@@ -144,7 +148,7 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
 
             val success = repository.saveAppointment(entity)
             if (success) {
-                _uiState.update { it.copy(isSubmittedSuccessfully = true) }
+                _uiState.update { it.copy(isSubmittedSuccessfully = true, errorMessage = null) }
                 onSuccess(entity)
             } else {
                 onError?.invoke("Error al guardar la cita en el sistema.")

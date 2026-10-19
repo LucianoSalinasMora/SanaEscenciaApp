@@ -1,6 +1,5 @@
 package com.sanaesencia.app.data
 
-
 import kotlinx.coroutines.flow.Flow
 
 class AppointmentRepository(private val appointmentDao: AppointmentDao) {

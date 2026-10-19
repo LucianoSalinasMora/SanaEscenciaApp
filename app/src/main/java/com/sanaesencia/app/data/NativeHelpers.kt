@@ -1,7 +1,9 @@
 package com.sanaesencia.app.data
 
 import android.Manifest
+import android.R
 import android.annotation.SuppressLint
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -97,9 +99,8 @@ class NotificationHelper(private val context: Context) {
 
     private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
 
-            // 1. Canal de Confirmaciones de Cita
             val channelConfirm = NotificationChannel(
                 CHANNEL_CONFIRMATIONS,
                 "Confirmación de Citas",
@@ -108,7 +109,6 @@ class NotificationHelper(private val context: Context) {
                 description = "Notificaciones instantáneas al agendar o modificar citas médicas"
             }
 
-            // 2. Canal de Alertas de Seguimiento
             val channelSeguimiento = NotificationChannel(
                 CHANNEL_SEGUIMIENTO,
                 "Alertas de Seguimiento",
@@ -117,7 +117,6 @@ class NotificationHelper(private val context: Context) {
                 description = "Recordatorios de controles, seguimiento pos-atención y reenganche de pacientes"
             }
 
-            // 3. Canal de Novedades y Promociones
             val channelNovedades = NotificationChannel(
                 CHANNEL_NOVEDADES,
                 "Novedades y Promociones",
@@ -126,9 +125,9 @@ class NotificationHelper(private val context: Context) {
                 description = "Alertas de ofertas, nuevos profesionales, descuentos y eventos"
             }
 
-            notificationManager.createNotificationChannel(channelConfirm)
-            notificationManager.createNotificationChannel(channelSeguimiento)
-            notificationManager.createNotificationChannel(channelNovedades)
+            notificationManager?.createNotificationChannel(channelConfirm)
+            notificationManager?.createNotificationChannel(channelSeguimiento)
+            notificationManager?.createNotificationChannel(channelNovedades)
         }
     }
 
@@ -163,7 +162,7 @@ class NotificationHelper(private val context: Context) {
         addNotificationToState(title, message, NotificationCategory.CONFIRMATION)
 
         val builder = NotificationCompat.Builder(context, CHANNEL_CONFIRMATIONS)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
@@ -186,7 +185,7 @@ class NotificationHelper(private val context: Context) {
         addNotificationToState(title, message, NotificationCategory.SEGUIMIENTO)
 
         val builder = NotificationCompat.Builder(context, CHANNEL_SEGUIMIENTO)
-            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setSmallIcon(R.drawable.ic_dialog_alert)
             .setContentTitle(title)
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
@@ -212,7 +211,7 @@ class NotificationHelper(private val context: Context) {
         addNotificationToState(title, fullMessage, NotificationCategory.NOVEDAD, promoCode)
 
         val builder = NotificationCompat.Builder(context, CHANNEL_NOVEDADES)
-            .setSmallIcon(android.R.drawable.ic_menu_compass)
+            .setSmallIcon(R.drawable.ic_menu_compass)
             .setContentTitle(title)
             .setContentText(fullMessage)
             .setStyle(NotificationCompat.BigTextStyle().bigText(fullMessage))
@@ -238,10 +237,10 @@ class NotificationHelper(private val context: Context) {
         _notifications.value = listOf(newNotification) + _notifications.value
     }
 
-    private fun notifySystem(notification: android.app.Notification) {
+    private fun notifySystem(notification: Notification) {
         if (hasNotificationPermission()) {
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify((System.currentTimeMillis() % Int.MAX_VALUE).toInt(), notification)
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            notificationManager?.notify((System.currentTimeMillis() % Int.MAX_VALUE).toInt(), notification)
         }
     }
 

@@ -165,6 +165,29 @@ fun BookingScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Error Alert Dialog / Card si ocurre un conflicto de solapamiento o validación
+            state.errorMessage?.let { errorMsg ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Error, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Aviso de Validación", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                            Text(errorMsg, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                        }
+                        IconButton(onClick = { bookingViewModel.clearError() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = MaterialTheme.colorScheme.onErrorContainer)
+                        }
+                    }
+                }
+            }
+
             // TARJETA DE DATOS DE PACIENTE (Cargados automáticamente de la sesión)
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -216,7 +239,7 @@ fun BookingScreen(
                 }
             }
 
-            // 2. SELECCIÓN DE PROFESIONAL DEL ÁREA
+            // 2. SELECCIÓN DE PROFESIONAL DEL ÁREA (Filtrado dinámicamente)
             Text("2. Profesional del Área", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             ExposedDropdownMenuBox(
                 expanded = proExpanded,
@@ -239,7 +262,7 @@ fun BookingScreen(
                         DropdownMenuItem(
                             text = { Text(proName) },
                             onClick = {
-                                bookingViewModel.onProfessionalChanged(proName)
+                                bookingViewModel.onProfessionalChanged(proName, dbProfessionals)
                                 proExpanded = false
                             }
                         )
@@ -267,7 +290,7 @@ fun BookingScreen(
                 )
             )
 
-            // 4. SELECCIÓN DE HORARIO
+            // 4. SELECCIÓN DE HORARIO (Bloquea/Deshabilita bloques ya reservados)
             Text("4. Horario / Módulo Disponible", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             if (state.date.isBlank()) {
                 Text(
@@ -371,7 +394,7 @@ fun BookingScreen(
                         }
                     )
                 },
-                enabled = state.isFormValid,
+                enabled = state.isFormValid && state.date.isNotBlank() && !bookedSlots.contains(state.timeSlot),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
@@ -394,7 +417,7 @@ fun BookingScreen(
                     datePickerState.selectedDateMillis?.let { millis ->
                         val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                         val formattedDate = formatter.format(Date(millis))
-                        bookingViewModel.onDateChanged(formattedDate)
+                        bookingViewModel.onDateChanged(formattedDate, dbProfessionals)
                     }
                     showDatePicker = false
                 }) {

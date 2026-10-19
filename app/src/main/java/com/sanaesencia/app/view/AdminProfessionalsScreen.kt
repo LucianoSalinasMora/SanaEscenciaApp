@@ -213,7 +213,9 @@ fun AddOrEditProfessionalDialog(
                             email = email.trim(),
                             phone = phone.trim(),
                             passwordHash = password.trim(),
-                            role = UserRole.PROFESIONAL
+                            role = UserRole.PROFESIONAL,
+                            securityQuestion = professionalToEdit?.securityQuestion ?: "Especialidad",
+                            securityAnswer = professionalToEdit?.securityAnswer ?: specialty.trim()
                         )
                     )
                 },

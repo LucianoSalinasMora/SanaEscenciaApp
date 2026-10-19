@@ -35,14 +35,16 @@ val mockProfessionals = listOf(
     Professional("4", "Dr. Juan Pablo Torres", "Nutrición Integrativa")
 )
 
-// 4. Entidad de Productos (Para el Admin)
+// 4. Entidad de Productos (Para el Admin con soporte de Imagen)
 @Entity(tableName = "products")
 data class ProductEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
     val description: String,
     val price: Double,
-    val isAvailable: Boolean = true
+    val isAvailable: Boolean = true,
+    val imageUrl: String = "",
+    val stock: Int = 10
 )
 
 // 5. Entidad de Reseñas (Pacientes escriben, Admin gestiona)

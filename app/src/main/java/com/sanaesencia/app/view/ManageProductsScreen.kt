@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -40,7 +41,7 @@ fun ManageProductsScreen(viewModel: ProductViewModel) {
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.secondary
                 )
-                Text("Productos Sanaesencia", style = MaterialTheme.typography.headlineSmall)
+                Text("Productos y Kits Sanaesencia", style = MaterialTheme.typography.headlineSmall)
             }
             Button(onClick = {
                 productoAEditar = null
@@ -198,4 +199,94 @@ fun ManageProductsScreen(viewModel: ProductViewModel) {
             }
         )
     }
+}
+
+@Composable
+fun ProductDialog(
+    productToEdit: ProductEntity?,
+    onDismiss: () -> Unit,
+    onSave: (ProductEntity) -> Unit
+) {
+    var name by remember { mutableStateOf(productToEdit?.name ?: "") }
+    var description by remember { mutableStateOf(productToEdit?.description ?: "") }
+    var price by remember { mutableStateOf(productToEdit?.price?.toInt()?.toString() ?: "") }
+    var stock by remember { mutableStateOf(productToEdit?.stock?.toString() ?: "10") }
+    var imageUrl by remember { mutableStateOf(productToEdit?.imageUrl ?: "") }
+    var isAvailable by remember { mutableStateOf(productToEdit?.isAvailable ?: true) }
+
+    val priceNum = price.toDoubleOrNull()
+    val stockNum = stock.toIntOrNull()
+    val isFormValid = name.trim().length >= 3 && priceNum != null && priceNum > 0 && stockNum != null && stockNum >= 0
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (productToEdit == null) "Nuevo Producto / Kit" else "Editar Producto") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre del Producto") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = price,
+                    onValueChange = { price = it.filter { c -> c.isDigit() } },
+                    label = { Text("Precio (CLP)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = stock,
+                    onValueChange = { stock = it.filter { c -> c.isDigit() } },
+                    label = { Text("Cantidad / Stock Disponible") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = imageUrl,
+                    onValueChange = { imageUrl = it },
+                    label = { Text("URL de Imagen / Icono (Opcional)") },
+                    leadingIcon = { Icon(Icons.Default.Image, contentDescription = null) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onSave(
+                        ProductEntity(
+                            id = productToEdit?.id ?: 0,
+                            name = name.trim(),
+                            description = description.trim(),
+                            price = priceNum ?: 0.0,
+                            imageUrl = imageUrl.trim(),
+                            isAvailable = isAvailable,
+                            stock = stockNum ?: 10
+                        )
+                    )
+                },
+                enabled = isFormValid
+            ) {
+                Text(if (productToEdit == null) "Guardar" else "Actualizar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
 }

@@ -3,6 +3,8 @@ package com.sanaesencia.app.view
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Delete
@@ -20,6 +22,7 @@ import com.sanaesencia.app.data.ContactHelper
 import com.sanaesencia.app.data.NosotrosInfo
 import com.sanaesencia.app.data.NosotrosManager
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NosotrosScreen(role: String = "PACIENTE") {
     val context = LocalContext.current
