@@ -1,6 +1,11 @@
 package com.sanaesencia.app.view
 
 import android.widget.Toast
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,7 +23,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.compose.ui.graphics.Color
+import com.sanaesencia.app.R
 import com.sanaesencia.app.data.AppointmentEntity
+import com.sanaesencia.app.data.isCancelled
+import com.sanaesencia.app.data.ContactHelper
+import com.sanaesencia.app.data.NosotrosManager
+import com.sanaesencia.app.data.NotificationHelper
+import com.sanaesencia.app.data.UserEntity
+import com.sanaesencia.app.data.UserRole
 import com.sanaesencia.app.data.Validators
 import com.sanaesencia.app.data.mockProfessionals
 import com.sanaesencia.app.viewmodel.BookingViewModel
@@ -35,6 +49,7 @@ fun DashboardScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
+        contentPadding = PaddingValues(bottom = 88.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -72,7 +87,11 @@ fun DashboardScreen(
             items(appointments) { appointment ->
                 AppointmentCard(
                     appointment = appointment,
-                    onCancel = { id -> viewModel.cancelAppointment(id) }
+                    onCancel = {
+                        viewModel.cancelAppointment(appointment.id) {
+                            Toast.makeText(context, "Cita cancelada exitosamente", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 )
             }
         }
@@ -105,6 +124,7 @@ fun ProfileScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
+        contentPadding = PaddingValues(bottom = 88.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -204,7 +224,11 @@ fun ProfileScreen(
             items(appointments) { appointment ->
                 AppointmentCard(
                     appointment = appointment,
-                    onCancel = { id -> bookingViewModel.cancelAppointment(id) }
+                    onCancel = {
+                        bookingViewModel.cancelAppointment(appointment.id) {
+                            Toast.makeText(context, "Cita cancelada exitosamente", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 )
             }
         }
@@ -214,13 +238,113 @@ fun ProfileScreen(
 @Composable
 fun AppointmentCard(
     appointment: AppointmentEntity,
-    onCancel: (Long) -> Unit
+    onCancel: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null
 ) {
-    val isCanceled = appointment.status.equals("Cancelada", ignoreCase = true) || appointment.state.equals("CANCELADA", ignoreCase = true)
+    var isExpanded by remember { mutableStateOf(false) }
+    var mostrarConfirmacionCancelar by remember { mutableStateOf(false) }
+    var mostrarConfirmacionEliminar by remember { mutableStateOf(false) }
+
+    val isCancelled = appointment.isCancelled
+
+    val animatedBg by animateColorAsState(
+        targetValue = when {
+            isCancelled -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
+            isExpanded -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+            else -> MaterialTheme.colorScheme.surface
+        },
+        animationSpec = tween(durationMillis = 280),
+        label = "cardBgColor"
+    )
+
+    if (mostrarConfirmacionCancelar) {
+        AlertDialog(
+            onDismissRequest = { mostrarConfirmacionCancelar = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Confirmar Cancelación",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "¿Estás seguro de que deseas cancelar la cita de ${appointment.serviceType} con ${appointment.professionalName} agendada para el ${appointment.date} a las ${appointment.timeSlot}?\n\nAl cancelarla, desaparecerá de tus citas agendadas y el horario volverá a quedar disponible para otros pacientes."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        mostrarConfirmacionCancelar = false
+                        onCancel?.invoke()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Sí, cancelar cita")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarConfirmacionCancelar = false }) {
+                    Text("No, mantener cita")
+                }
+            }
+        )
+    }
+
+    if (mostrarConfirmacionEliminar) {
+        AlertDialog(
+            onDismissRequest = { mostrarConfirmacionEliminar = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.DeleteForever,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Eliminar Registro",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "¿Deseas eliminar definitivamente este registro de cita de la base de datos?"
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        mostrarConfirmacionEliminar = false
+                        onDelete?.invoke()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Eliminar definitivamente")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarConfirmacionEliminar = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(animationSpec = tween(durationMillis = 280))
+            .clickable { isExpanded = !isExpanded },
+        colors = CardDefaults.elevatedCardColors(containerColor = animatedBg)
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
@@ -231,17 +355,73 @@ fun AppointmentCard(
                 Text(
                     text = appointment.serviceType,
                     style = MaterialTheme.typography.titleMedium,
-                    color = if (isCanceled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                    color = if (isCancelled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
                 )
-                AssistChip(
-                    onClick = { },
-                    label = { Text(if (isCanceled) "Cancelada" else appointment.status) },
-                    leadingIcon = {
-                        if (!isCanceled) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null)
-                        }
+                Spacer(modifier = Modifier.width(8.dp))
+                if (isCancelled) {
+                    AssistChip(
+                        onClick = { isExpanded = !isExpanded },
+                        label = { Text("Cancelada", fontWeight = FontWeight.Bold) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            labelColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    )
+                } else {
+                    AssistChip(
+                        onClick = { isExpanded = !isExpanded },
+                        label = { Text(if (appointment.status.isBlank() || appointment.status.equals("Cancelada", ignoreCase = true)) "Agendada" else appointment.status) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            labelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
+                }
+            }
+
+            if (isCancelled) {
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Cita Cancelada - El box y horario fueron liberados",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
-                )
+                }
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -275,14 +455,34 @@ fun AppointmentCard(
                 }
             }
 
-            if (!isCanceled) {
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedButton(
-                    onClick = { onCancel(appointment.id) },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text("Cancelar Cita")
+            if (isExpanded) {
+                Spacer(modifier = Modifier.height(10.dp))
+                if (!isCancelled && onCancel != null) {
+                    Button(
+                        onClick = { mostrarConfirmacionCancelar = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Cancelar Cita", fontWeight = FontWeight.Bold)
+                    }
+                }
+                if (isCancelled && onDelete != null) {
+                    OutlinedButton(
+                        onClick = { mostrarConfirmacionEliminar = true },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Eliminar Registro de la Lista", fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }
@@ -307,7 +507,260 @@ fun ProfessionalsScreen() {
 
 @Composable
 fun AboutScreen(role: String = "PACIENTE") {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Nosotros", style = MaterialTheme.typography.headlineMedium)
+    val context = LocalContext.current
+    val nosotrosInfo by NosotrosManager.infoState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        NosotrosManager.init(context)
+    }
+
+    val mapsUrl = "https://maps.app.goo.gl/3hFvN2dRbjQkc5vq5"
+
+    fun openGoogleMaps() {
+        val intent = Intent(Intent.ACTION_VIEW, mapsUrl.toUri())
+        try {
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            Toast.makeText(context, "No se pudo abrir la aplicación de mapas", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Text(
+                text = "Nosotros",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        item {
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "Logo Centro Sanaesencia",
+                        modifier = Modifier.height(42.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = nosotrosInfo.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Text(
+                        text = nosotrosInfo.description,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+
+        // --- TARJETA DE UBICACIÓN Y MAPA INTERACTIVO ---
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { openGoogleMaps() },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Image(
+                            painter = painterResource(id = R.drawable.img_map_preview),
+                            contentDescription = "Mapa Ubicación Sanaesencia",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                        )
+
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                    contentDescription = "Abrir Google Maps",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Abrir Maps",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Ubicación Presencial",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Text(
+                            text = nosotrosInfo.address,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        Text(
+                            text = "Toca la imagen o presiona el botón para abrir la ruta en Google Maps.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Button(
+                            onClick = { openGoogleMaps() },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Place,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Ver Ubicación en Google Maps")
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- CONTACTO Y HORARIOS ---
+        item {
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Información de Atención",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Contacto / WhatsApp: ${nosotrosInfo.phone}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Correo: ${nosotrosInfo.email}", style = MaterialTheme.typography.bodyMedium)
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Horario: ${nosotrosInfo.schedule}", style = MaterialTheme.typography.bodyMedium)
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                ContactHelper.openWhatsApp(
+                                    context = context,
+                                    rawPhone = nosotrosInfo.phone,
+                                    message = "Hola Centro Sanaesencia, me gustaría solicitar información."
+                                )
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Chat, contentDescription = "WhatsApp", tint = Color.White, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Chatear por WhatsApp", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                ContactHelper.addContact(
+                                    context = context,
+                                    name = nosotrosInfo.title,
+                                    phone = nosotrosInfo.phone,
+                                    email = nosotrosInfo.email,
+                                    address = nosotrosInfo.address
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Guardar Contacto")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Cada usuario ve solo las citas que le corresponden (el admin ve todas), excluyendo las canceladas
+private fun filtrarCitasPorUsuario(
+    citas: List<AppointmentEntity>,
+    user: UserEntity?
+): List<AppointmentEntity> {
+    if (user == null) return emptyList()
+    val activas = citas.filter { !it.isCancelled }
+    return when (user.role) {
+        UserRole.PACIENTE -> activas.filter { 
+            (user.run.isNotBlank() && it.patientRun.equals(user.run, ignoreCase = true)) || 
+            (user.email.isNotBlank() && it.patientEmail.equals(user.email, ignoreCase = true)) ||
+            (user.name.isNotBlank() && it.patientName.equals(user.name, ignoreCase = true))
+        }
+        UserRole.PROFESIONAL -> activas.filter { 
+            it.professionalName.equals(user.name, ignoreCase = true) ||
+            (user.run.isNotBlank() && it.professionalRun.equals(user.run, ignoreCase = true))
+        }
+        UserRole.ADMIN -> activas
     }
 }

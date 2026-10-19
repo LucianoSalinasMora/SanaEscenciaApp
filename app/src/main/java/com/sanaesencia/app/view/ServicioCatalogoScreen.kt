@@ -16,8 +16,8 @@ import com.sanaesencia.app.viewmodel.UserViewModel
 @Composable
 fun ServiciosCatalogoScreen(
     userViewModel: UserViewModel,
-    productViewModel: ProductViewModel,
-    onAgendar: () -> Unit
+    onAgendar: () -> Unit,
+    onVerProductos: () -> Unit = {}
 ) {
     val profesionales by userViewModel.professionals.collectAsState()
     val products by productViewModel.products.collectAsState()
@@ -96,37 +96,23 @@ fun ServiciosCatalogoScreen(
             }
         }
 
-        val availableProducts = products.distinctBy { it.name }.filter { it.isAvailable }
-        if (availableProducts.isNotEmpty()) {
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Productos y Kits de Bienestar",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            items(availableProducts) { product ->
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+        item {
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Productos de Bienestar y Aromaterapia", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = "Línea propia Sanaesencia: kits, roll-ons y brumas de aromaterapia disponibles para pacientes.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                    OutlinedButton(
+                        onClick = onVerProductos,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(product.name, style = MaterialTheme.typography.titleMedium)
-                            Text(product.description, style = MaterialTheme.typography.bodySmall)
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text("Stock disponible: ${product.stock} unidades", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
-                            if (product.imageUrl.isNotBlank()) {
-                                Text("Imagen/Ref: ${product.imageUrl}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Precio: $${product.price.toInt()} CLP",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        Text("Ver Catálogo de Productos")
                     }
                 }
             }

@@ -23,10 +23,18 @@ interface AppointmentDao {
     fun getAppointmentsByPatient(patientRun: String): Flow<List<AppointmentEntity>>
 
     // Cambiar el estado de una cita
-    @Query("UPDATE appointments SET state = :newState WHERE id = :appointmentId")
-    suspend fun updateAppointmentState(appointmentId: Long, newState: String)
+    @Query("UPDATE appointments SET state = :newState, status = :newStatus WHERE id = :appointmentId")
+    suspend fun updateAppointmentState(appointmentId: Long, newState: String, newStatus: String = "Cancelada")
 
-    // Cancelar una cita
-    @Query("UPDATE appointments SET status = 'Cancelada', state = 'CANCELADA' WHERE id = :appointmentId")
-    suspend fun cancelAppointment(appointmentId: Long)
+    // Verificar si ya existe una cita activa para el profesional en esa fecha y horario
+    @Query("SELECT COUNT(*) FROM appointments WHERE date = :date AND professionalName = :professionalName AND timeSlot = :timeSlot AND state != 'CANCELADA' AND status != 'CANCELADA' AND status != 'Cancelada'")
+    suspend fun countConflictAppointments(date: String, professionalName: String, timeSlot: String): Int
+
+    // Obtener qué boxes presenciales ya están ocupados en esa fecha y horario
+    @Query("SELECT boxNumber FROM appointments WHERE date = :date AND timeSlot = :timeSlot AND isOnline = 0 AND state != 'CANCELADA' AND status != 'CANCELADA' AND status != 'Cancelada' AND boxNumber IS NOT NULL")
+    suspend fun getOccupiedBoxes(date: String, timeSlot: String): List<Int>
+
+    // Eliminar una cita por su ID
+    @Query("DELETE FROM appointments WHERE id = :appointmentId")
+    suspend fun deleteAppointment(appointmentId: Long)
 }

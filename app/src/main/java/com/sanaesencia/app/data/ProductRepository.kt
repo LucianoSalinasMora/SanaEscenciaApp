@@ -3,25 +3,9 @@ package com.sanaesencia.app.data
 import kotlinx.coroutines.flow.Flow
 
 class ProductRepository(private val productDao: ProductDao) {
+
     val allProducts: Flow<List<ProductEntity>> = productDao.getAllProducts()
-
-    private val seedProducts = listOf(
-        ProductEntity(name = "Kit de Bienestar Integrativo", description = "Set de aromaterapia con roll-on, bruma y aceite esencial.", price = 24990.0, imageUrl = "kit_bienestar", stock = 15),
-        ProductEntity(name = "Roll-on Calma y Serenidad", description = "Aceites esenciales de lavanda y manzanilla para momentos de estrés.", price = 7990.0, imageUrl = "rollon_calma", stock = 20),
-        ProductEntity(name = "Bruma de Almohada Sueño Dulce", description = "Bruma botánica relajante para el descanso nocturno.", price = 9990.0, imageUrl = "bruma_sueno", stock = 12),
-        ProductEntity(name = "Roll-on Concentración y Foco", description = "Aroma de menta y romero para potenciar el estudio.", price = 7990.0, imageUrl = "rollon_foco", stock = 18)
-    )
-
-    suspend fun seedInitialProducts() {
-        try {
-            val count = productDao.getProductCount()
-            if (count == 0) {
-                productDao.insertProducts(seedProducts)
-            }
-        } catch (e: Throwable) {
-            // Ignore
-        }
-    }
+    val availableProducts: Flow<List<ProductEntity>> = productDao.getAvailableProducts()
 
     suspend fun insertProduct(product: ProductEntity) {
         productDao.insertProduct(product)
@@ -33,5 +17,39 @@ class ProductRepository(private val productDao: ProductDao) {
 
     suspend fun deleteProduct(product: ProductEntity) {
         productDao.deleteProduct(product)
+    }
+
+    suspend fun seedInitialProducts() {
+        if (productDao.getCount() == 0) {
+            val defaultProducts = listOf(
+                ProductEntity(
+                    name = "Kit de Bienestar",
+                    description = "Set de aromaterapia con roll-on y bruma.",
+                    price = 24990.0,
+                    isAvailable = true
+                ),
+                ProductEntity(
+                    name = "Roll-on Calma",
+                    description = "Aceites esenciales para momentos de estrés.",
+                    price = 7990.0,
+                    isAvailable = true
+                ),
+                ProductEntity(
+                    name = "Bruma de Almohada",
+                    description = "Bruma relajante para el descanso nocturno.",
+                    price = 9990.0,
+                    isAvailable = true
+                ),
+                ProductEntity(
+                    name = "Roll-on Foco",
+                    description = "Aroma para concentración y estudio.",
+                    price = 7990.0,
+                    isAvailable = false
+                )
+            )
+            for (p in defaultProducts) {
+                productDao.insertProduct(p)
+            }
+        }
     }
 }

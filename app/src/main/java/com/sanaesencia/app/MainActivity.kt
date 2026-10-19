@@ -48,6 +48,9 @@ class MainActivity : ComponentActivity() {
         val productRepository = ProductRepository(database.productDao())
         val aboutRepository = AboutRepository(database.aboutDao())
 
+        // 2. Inicializamos el repositorio de productos
+        val productRepository = ProductRepository(database.productDao())
+
         setContent {
             SanaesenciaTheme {
                 Surface(
@@ -64,10 +67,6 @@ class MainActivity : ComponentActivity() {
 
                     val productViewModel: ProductViewModel = viewModel(
                         factory = ProductViewModelFactory(productRepository)
-                    )
-
-                    val aboutViewModel: AboutViewModel = viewModel(
-                        factory = AboutViewModelFactory(aboutRepository)
                     )
 
                     val navController = rememberNavController()
@@ -125,7 +124,6 @@ class MainActivity : ComponentActivity() {
                                 userViewModel = userViewModel,
                                 bookingViewModel = bookingViewModel,
                                 productViewModel = productViewModel,
-                                aboutViewModel = aboutViewModel,
                                 notificationHelper = notificationHelper,
                                 onLogout = {
                                     navController.navigate(Screen.Login.route) {

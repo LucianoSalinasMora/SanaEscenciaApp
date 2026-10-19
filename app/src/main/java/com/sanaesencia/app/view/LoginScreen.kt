@@ -2,11 +2,15 @@ package com.sanaesencia.app.view
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.R
@@ -53,10 +57,16 @@ fun LoginScreen(
         OutlinedTextField(
             value = run,
             onValueChange = {
-                run = it
+                run = it.replace("\n", "").replace("\r", "")
                 showError = false
             },
             label = { Text("RUN / Usuario") },
+            singleLine = true,
+            maxLines = 1,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            ),
             isError = !isRunValid,
             supportingText = {
                 if (!isRunValid) {
@@ -70,10 +80,29 @@ fun LoginScreen(
         OutlinedTextField(
             value = password,
             onValueChange = {
-                password = it
+                password = it.replace("\n", "").replace("\r", "")
                 showError = false
             },
             label = { Text("Contraseña") },
+            singleLine = true,
+            maxLines = 1,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    if (isFormValid) {
+                        viewModel.login(run, password) { user ->
+                            if (user != null) {
+                                onLoginSuccess(user.role)
+                            } else {
+                                showError = true
+                            }
+                        }
+                    }
+                }
+            ),
             visualTransformation = PasswordVisualTransformation(),
             isError = !isPasswordValid,
             supportingText = {

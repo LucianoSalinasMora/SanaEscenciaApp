@@ -46,7 +46,6 @@ fun MainScreen(
     userViewModel: UserViewModel,
     bookingViewModel: BookingViewModel,
     productViewModel: ProductViewModel,
-    aboutViewModel: AboutViewModel,
     notificationHelper: NotificationHelper,
     onLogout: () -> Unit // Acción para cerrar sesión
 ) {
@@ -96,6 +95,7 @@ fun MainScreen(
         else -> listOf( // PACIENTE por defecto
             Screen.Inicio,
             Screen.Catalog,
+            Screen.PatientProducts,
             Screen.About,
             Screen.Profile
         )
@@ -234,9 +234,12 @@ fun MainScreen(
             composable(Screen.Catalog.route) {
                 ServiciosCatalogoScreen(
                     userViewModel = userViewModel,
-                    productViewModel = productViewModel,
-                    onAgendar = { parentNavController.navigate(Screen.Booking.route) }
+                    onAgendar = { parentNavController.navigate(Screen.Booking.route) },
+                    onVerProductos = { bottomNavController.navigate(Screen.PatientProducts.route) }
                 )
+            }
+            composable(Screen.PatientProducts.route) {
+                PatientProductsScreen(productViewModel = productViewModel)
             }
 
             // Vistas de Profesional
@@ -248,7 +251,7 @@ fun MainScreen(
             composable(Screen.MySchedule.route) { MyScheduleScreen(bookingViewModel = bookingViewModel, userViewModel = userViewModel) }
 
             // Vistas de Administrador
-            composable(Screen.ManageProducts.route) { ManageProductsScreen(productViewModel = productViewModel) }
+            composable(Screen.ManageProducts.route) { ManageProductsScreen(viewModel = productViewModel) }
             composable(Screen.ManageSchedule.route) { ManageScheduleScreen(bookingViewModel = bookingViewModel) }
             composable(Screen.AdminProfessionals.route) { AdminProfessionalsScreen(viewModel = userViewModel) }
         }

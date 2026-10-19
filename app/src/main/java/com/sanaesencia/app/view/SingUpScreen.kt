@@ -73,8 +73,10 @@ fun SignUpScreen(
 
             OutlinedTextField(
                 value = run,
-                onValueChange = { run = it },
+                onValueChange = { run = it.replace("\n", "").replace("\r", "") },
                 label = { Text("RUN (Ej: 12345678-9)") },
+                singleLine = true,
+                maxLines = 1,
                 isError = !isRunValid,
                 supportingText = { if (!isRunValid) Text("RUN chileno inválido", color = MaterialTheme.colorScheme.error) },
                 modifier = Modifier.fillMaxWidth()
@@ -82,8 +84,10 @@ fun SignUpScreen(
 
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = { name = it.replace("\n", "").replace("\r", "") },
                 label = { Text("Nombre Completo") },
+                singleLine = true,
+                maxLines = 1,
                 isError = !isNameValid,
                 supportingText = { if (!isNameValid) Text("Mínimo 3 caracteres", color = MaterialTheme.colorScheme.error) },
                 modifier = Modifier.fillMaxWidth()
@@ -91,8 +95,10 @@ fun SignUpScreen(
 
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { email = it.replace("\n", "").replace("\r", "") },
                 label = { Text("Correo Electrónico (ej. usuario@dominio.com)") },
+                singleLine = true,
+                maxLines = 1,
                 isError = !isEmailValid,
                 supportingText = { if (!isEmailValid) Text("Formato de correo inválido", color = MaterialTheme.colorScheme.error) },
                 modifier = Modifier.fillMaxWidth()
@@ -100,8 +106,10 @@ fun SignUpScreen(
 
             OutlinedTextField(
                 value = phone,
-                onValueChange = { phone = it },
+                onValueChange = { phone = it.replace("\n", "").replace("\r", "") },
                 label = { Text("Teléfono (+56912345678)") },
+                singleLine = true,
+                maxLines = 1,
                 isError = !isPhoneValid,
                 supportingText = { if (!isPhoneValid) Text("Número de teléfono inválido (8 a 12 dígitos)", color = MaterialTheme.colorScheme.error) },
                 modifier = Modifier.fillMaxWidth()
@@ -109,8 +117,10 @@ fun SignUpScreen(
 
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = { password = it.replace("\n", "").replace("\r", "") },
                 label = { Text("Contraseña") },
+                singleLine = true,
+                maxLines = 1,
                 visualTransformation = PasswordVisualTransformation(),
                 isError = !isPasswordValid,
                 supportingText = { if (!isPasswordValid) Text("Mínimo 4 caracteres", color = MaterialTheme.colorScheme.error) },
@@ -122,15 +132,19 @@ fun SignUpScreen(
 
             OutlinedTextField(
                 value = securityQuestion,
-                onValueChange = { securityQuestion = it },
+                onValueChange = { securityQuestion = it.replace("\n", "").replace("\r", "") },
                 label = { Text("Pregunta de Seguridad") },
+                singleLine = true,
+                maxLines = 1,
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = securityAnswer,
-                onValueChange = { securityAnswer = it },
+                onValueChange = { securityAnswer = it.replace("\n", "").replace("\r", "") },
                 label = { Text("Respuesta de Seguridad") },
+                singleLine = true,
+                maxLines = 1,
                 isError = !isSecurityAnswerValid,
                 supportingText = { if (!isSecurityAnswerValid) Text("Ingrese una respuesta válida", color = MaterialTheme.colorScheme.error) },
                 modifier = Modifier.fillMaxWidth()

@@ -103,11 +103,11 @@ fun AdminProfessionalsScreen(viewModel: UserViewModel) {
     }
 
     if (showDialog) {
-        ProfessionalDialog(
+        AddOrEditProfessionalDialog(
             professionalToEdit = editingProfessional,
             onDismiss = { showDialog = false },
             onSave = { pro ->
-                viewModel.registerUser(pro) {
+                viewModel.registerProfessional(pro) {
                     showDialog = false
                 }
             }
@@ -116,7 +116,7 @@ fun AdminProfessionalsScreen(viewModel: UserViewModel) {
 }
 
 @Composable
-fun ProfessionalDialog(
+fun AddOrEditProfessionalDialog(
     professionalToEdit: UserEntity?,
     onDismiss: () -> Unit,
     onSave: (UserEntity) -> Unit
@@ -221,7 +221,7 @@ fun ProfessionalDialog(
                 },
                 enabled = isFormValid
             ) {
-                Text(if (professionalToEdit == null) "Guardar" else "Actualizar")
+                Text(if (professionalToEdit == null) "Guardar Profesional" else "Actualizar Profesional")
             }
         },
         dismissButton = {

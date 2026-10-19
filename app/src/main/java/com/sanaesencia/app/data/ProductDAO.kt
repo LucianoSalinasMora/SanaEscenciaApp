@@ -28,6 +28,13 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE isAvailable = 1 ORDER BY name ASC")
     fun getAvailableProducts(): Flow<List<ProductEntity>>
 
+    @Query("SELECT * FROM products ORDER BY id DESC")
+    fun getAllProducts(): Flow<List<ProductEntity>>
+
+    @Query("SELECT COUNT(*) FROM products")
+    suspend fun getCount(): Int
+}
+
     @Query("SELECT COUNT(*) FROM products")
     suspend fun getProductCount(): Int
 }

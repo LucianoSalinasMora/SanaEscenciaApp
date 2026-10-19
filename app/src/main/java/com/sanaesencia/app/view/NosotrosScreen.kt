@@ -6,26 +6,35 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.sanaesencia.app.data.AboutInfoEntity
-import com.sanaesencia.app.viewmodel.AboutViewModel
+import com.sanaesencia.app.data.ContactHelper
+import com.sanaesencia.app.data.NosotrosInfo
+import com.sanaesencia.app.data.NosotrosManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NosotrosScreen(
-    role: String = "PACIENTE",
-    aboutViewModel: AboutViewModel
-) {
-    val aboutInfo by aboutViewModel.aboutInfo.collectAsState()
-    var showEditDialog by remember { mutableStateOf(false) }
+fun NosotrosScreen(role: String = "PACIENTE") {
+    val context = LocalContext.current
+    val nosotrosInfo by NosotrosManager.infoState.collectAsState()
 
-    // Reseñas de ejemplo
+    LaunchedEffect(Unit) {
+        NosotrosManager.init(context)
+    }
+
+    var mostrarDialogoEditar by remember { mutableStateOf(false) }
+
+    // Reseñas de ejemplo (ficticias, solo en memoria). El admin puede eliminarlas.
     val resenas = remember {
         mutableStateListOf(
             "Paciente 1" to "Excelente atención y un espacio muy acogedor.",
@@ -35,15 +44,18 @@ fun NosotrosScreen(
     }
 
     val especialidades = listOf(
-        "Psicología",
+        "Psicología Infanto-Juvenil",
+        "Psicología Adolescentes y Adultos",
         "Terapia Ocupacional",
         "Fonoaudiología",
         "Psicopedagogía",
-        "Nutrición",
-        "Matronería",
+        "Nutrición Integrativa",
+        "Matronería y Salud Femenina",
         "Quiropraxia y Masajes",
         "Evaluaciones del Neurodesarrollo",
-        "Terapia Floral y Aromaterapia"
+        "Medicina General y Salud Mental",
+        "Terapia Floral y Aromaterapia",
+        "Acupuntura"
     )
 
     LazyColumn(
@@ -61,12 +73,14 @@ fun NosotrosScreen(
                 Text(
                     text = "Nosotros",
                     style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
                 )
+
                 if (role == "ADMIN") {
-                    Button(onClick = { showEditDialog = true }) {
-                        Icon(Icons.Default.Edit, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
+                    Button(onClick = { mostrarDialogoEditar = true }) {
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text("Editar Información")
                     }
                 }
@@ -76,9 +90,9 @@ fun NosotrosScreen(
         item {
             ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(aboutInfo?.centerTitle ?: "Centro Integrativo Sanaesencia", style = MaterialTheme.typography.titleMedium)
+                    Text(nosotrosInfo.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(
-                        aboutInfo?.description ?: "Salud mental infanto-juvenil, familia y bienestar integrativo.",
+                        nosotrosInfo.description,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -87,11 +101,52 @@ fun NosotrosScreen(
 
         item {
             ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Contacto", style = MaterialTheme.typography.titleMedium)
-                    Text("Dirección: ${aboutInfo?.address ?: "Caupolicán 220, Los Vilos"}", style = MaterialTheme.typography.bodyMedium)
-                    Text("Teléfono / WhatsApp: ${aboutInfo?.phone ?: "+56 9 2366 5073"}", style = MaterialTheme.typography.bodyMedium)
-                    Text("Correo: ${aboutInfo?.email ?: "contacto@centrosanaesencia.cl"}", style = MaterialTheme.typography.bodyMedium)
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Contacto y Horarios", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Dirección: ${nosotrosInfo.address}", style = MaterialTheme.typography.bodyMedium)
+                    Text("Teléfono / WhatsApp: ${nosotrosInfo.phone}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Correo: ${nosotrosInfo.email}", style = MaterialTheme.typography.bodyMedium)
+                    Text("Horario de Atención: ${nosotrosInfo.schedule}", style = MaterialTheme.typography.bodyMedium)
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                ContactHelper.openWhatsApp(
+                                    context = context,
+                                    rawPhone = nosotrosInfo.phone,
+                                    message = "Hola Centro Sanaesencia, me gustaría solicitar información."
+                                )
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Chat, contentDescription = "WhatsApp", tint = Color.White, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Chatear WhatsApp", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                ContactHelper.addContact(
+                                    context = context,
+                                    name = nosotrosInfo.title,
+                                    phone = nosotrosInfo.phone,
+                                    email = nosotrosInfo.email,
+                                    address = nosotrosInfo.address
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Guardar Contacto")
+                        }
+                    }
                 }
             }
         }
@@ -99,7 +154,7 @@ fun NosotrosScreen(
         item {
             ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Nuestras especialidades", style = MaterialTheme.typography.titleMedium)
+                    Text("Nuestras Especialidades", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     especialidades.forEach { esp ->
                         Text("• $esp", style = MaterialTheme.typography.bodyMedium)
                     }
@@ -113,7 +168,7 @@ fun NosotrosScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Gestión de Reseñas", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    "Reseñas de pacientes (datos de ejemplo).",
+                    "Reseñas publicadas por pacientes (puedes administrarlas o eliminarlas).",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.secondary
                 )
@@ -143,7 +198,7 @@ fun NosotrosScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(resena.first, style = MaterialTheme.typography.titleSmall)
+                                Text(resena.first, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                                 Text(resena.second, style = MaterialTheme.typography.bodyMedium)
                             }
                             IconButton(onClick = { resenas.removeAt(index) }) {
@@ -160,94 +215,92 @@ fun NosotrosScreen(
         }
     }
 
-    if (showEditDialog) {
-        AboutEditDialog(
-            currentInfo = aboutInfo ?: AboutInfoEntity(),
-            onDismiss = { showEditDialog = false },
-            onSave = { updatedInfo ->
-                aboutViewModel.updateAboutInfo(updatedInfo)
-                showEditDialog = false
+    // Modal de Edición del apartado Nosotros para el ADMIN
+    if (mostrarDialogoEditar && role == "ADMIN") {
+        var titulo by remember { mutableStateOf(nosotrosInfo.title) }
+        var descripcion by remember { mutableStateOf(nosotrosInfo.description) }
+        var direccion by remember { mutableStateOf(nosotrosInfo.address) }
+        var telefono by remember { mutableStateOf(nosotrosInfo.phone) }
+        var correo by remember { mutableStateOf(nosotrosInfo.email) }
+        var horario by remember { mutableStateOf(nosotrosInfo.schedule) }
+
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoEditar = false },
+            title = { Text("Editar Apartado Nosotros") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = titulo,
+                        onValueChange = { titulo = it.replace("\n", "") },
+                        label = { Text("Nombre del Centro") },
+                        singleLine = true,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = descripcion,
+                        onValueChange = { descripcion = it.replace("\n", "") },
+                        label = { Text("Descripción / Misión") },
+                        singleLine = true,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = direccion,
+                        onValueChange = { direccion = it.replace("\n", "") },
+                        label = { Text("Dirección") },
+                        singleLine = true,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = telefono,
+                        onValueChange = { telefono = it.replace("\n", "") },
+                        label = { Text("Teléfono / WhatsApp") },
+                        singleLine = true,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = correo,
+                        onValueChange = { correo = it.replace("\n", "") },
+                        label = { Text("Correo Electrónico") },
+                        singleLine = true,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = horario,
+                        onValueChange = { horario = it.replace("\n", "") },
+                        label = { Text("Horario de Atención") },
+                        singleLine = true,
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val updated = NosotrosInfo(
+                            title = titulo.trim(),
+                            description = descripcion.trim(),
+                            address = direccion.trim(),
+                            phone = telefono.trim(),
+                            email = correo.trim(),
+                            schedule = horario.trim()
+                        )
+                        NosotrosManager.saveInfo(context, updated)
+                        mostrarDialogoEditar = false
+                    },
+                    enabled = titulo.isNotBlank() && telefono.isNotBlank()
+                ) {
+                    Text("Guardar Cambios")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogoEditar = false }) { Text("Cancelar") }
             }
         )
     }
-}
-
-@Composable
-fun AboutEditDialog(
-    currentInfo: AboutInfoEntity,
-    onDismiss: () -> Unit,
-    onSave: (AboutInfoEntity) -> Unit
-) {
-    var centerTitle by remember { mutableStateOf(currentInfo.centerTitle) }
-    var description by remember { mutableStateOf(currentInfo.description) }
-    var address by remember { mutableStateOf(currentInfo.address) }
-    var phone by remember { mutableStateOf(currentInfo.phone) }
-    var email by remember { mutableStateOf(currentInfo.email) }
-
-    val isFormValid = centerTitle.isNotBlank() && description.isNotBlank() && address.isNotBlank()
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Editar Información 'Nosotros'") },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = centerTitle,
-                    onValueChange = { centerTitle = it },
-                    label = { Text("Título del Centro") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Descripción / Quiénes Somos") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3
-                )
-                OutlinedTextField(
-                    value = address,
-                    onValueChange = { address = it },
-                    label = { Text("Dirección") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = phone,
-                    onValueChange = { phone = it },
-                    label = { Text("Teléfono / WhatsApp") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Correo Electrónico") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onSave(
-                        AboutInfoEntity(
-                            id = 1,
-                            centerTitle = centerTitle.trim(),
-                            description = description.trim(),
-                            address = address.trim(),
-                            phone = phone.trim(),
-                            email = email.trim()
-                        )
-                    )
-                },
-                enabled = isFormValid
-            ) {
-                Text("Guardar Cambios")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
-        }
-    )
 }

@@ -47,9 +47,11 @@ fun ForgotPasswordScreen(
             // --- PASO 1: Ingresar RUN ---
             OutlinedTextField(
                 value = run,
-                onValueChange = { run = it; runError = false },
+                onValueChange = { run = it.replace("\n", "").replace("\r", ""); runError = false },
                 isError = runError,
                 label = { Text("Ingresa tu RUN") },
+                singleLine = true,
+                maxLines = 1,
                 supportingText = { if (runError) Text("Usuario no encontrado") },
                 enabled = step == 1,
                 modifier = Modifier.fillMaxWidth()
@@ -83,8 +85,10 @@ fun ForgotPasswordScreen(
 
                 OutlinedTextField(
                     value = answer,
-                    onValueChange = { answer = it; answerError = false },
+                    onValueChange = { answer = it.replace("\n", "").replace("\r", ""); answerError = false },
                     label = { Text("Tu respuesta") },
+                    singleLine = true,
+                    maxLines = 1,
                     isError = answerError,
                     supportingText = { if (answerError) Text("Respuesta incorrecta") },
                     enabled = step == 2,
@@ -114,8 +118,10 @@ fun ForgotPasswordScreen(
                 )
                 OutlinedTextField(
                     value = newPassword,
-                    onValueChange = { newPassword = it },
+                    onValueChange = { newPassword = it.replace("\n", "").replace("\r", "") },
                     label = { Text("Nueva Contraseña") },
+                    singleLine = true,
+                    maxLines = 1,
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
                 )
