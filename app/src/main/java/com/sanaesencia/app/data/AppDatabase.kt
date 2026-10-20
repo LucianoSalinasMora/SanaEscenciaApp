@@ -6,6 +6,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
+// ==========================================
+// Base de Datos Principal Room de Sanaesencia
+// ==========================================
 @Database(
     entities = [
         AppointmentEntity::class,
@@ -20,16 +23,23 @@ import androidx.room.TypeConverters
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
+    // ------------------------------------------
+    // Métodos Abstractos de Acceso a DAOs
+    // ------------------------------------------
     abstract fun appointmentDao(): AppointmentDao
     abstract fun userDao(): UserDao
     abstract fun productDao(): ProductDao
     abstract fun reviewDao(): ReviewDao
     abstract fun aboutDao(): AboutDao
 
+    // ------------------------------------------
+    // Patrón Singleton para la Instancia de la Base de Datos
+    // ------------------------------------------
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        // Retorna la instancia única sincronizada de la base de datos
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(

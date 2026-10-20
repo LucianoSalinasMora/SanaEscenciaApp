@@ -40,6 +40,9 @@ import com.sanaesencia.app.data.mockProfessionals
 import com.sanaesencia.app.viewmodel.BookingViewModel
 import com.sanaesencia.app.viewmodel.UserViewModel
 
+// ==========================================
+// Pantalla de Inicio / Dashboard de Resumen (Citas y Novedades)
+// ==========================================
 @Composable
 fun DashboardScreen(
     viewModel: BookingViewModel,
@@ -101,6 +104,9 @@ fun DashboardScreen(
     }
 }
 
+// ==========================================
+// Pantalla de Perfil de Usuario y Datos Personales
+// ==========================================
 @Composable
 fun ProfileScreen(
     userViewModel: UserViewModel,
@@ -241,6 +247,9 @@ fun ProfileScreen(
     }
 }
 
+// ==========================================
+// Componente de Tarjeta de Cita Médica (Con Acciones y Detalle Expandible)
+// ==========================================
 @Composable
 fun AppointmentCard(
     appointment: AppointmentEntity,
@@ -495,6 +504,9 @@ fun AppointmentCard(
     }
 }
 
+// ==========================================
+// Pestaña de Catálogo (Placeholder / Vista General)
+// ==========================================
 @Composable
 fun CatalogTabScreen() {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -502,6 +514,9 @@ fun CatalogTabScreen() {
     }
 }
 
+// ==========================================
+// Pestaña de Profesionales (Lista General)
+// ==========================================
 @Composable
 fun ProfessionalsScreen() {
     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -511,6 +526,9 @@ fun ProfessionalsScreen() {
     }
 }
 
+// ==========================================
+// Pantalla Institucional "Nosotros" y Ubicación en Mapa
+// ==========================================
 @Composable
 fun AboutScreen(role: String = "PACIENTE") {
     val context = LocalContext.current
@@ -750,6 +768,9 @@ fun AboutScreen(role: String = "PACIENTE") {
     }
 }
 
+// ==========================================
+// Función Auxiliar: Filtrado de Citas según Rol del Usuario
+// ==========================================
 // Cada usuario ve solo las citas que le corresponden (el admin ve todas), excluyendo las canceladas
 private fun filtrarCitasPorUsuario(
     citas: List<AppointmentEntity>,

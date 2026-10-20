@@ -23,6 +23,9 @@ import com.sanaesencia.app.R
 import com.sanaesencia.app.data.UserRole
 import com.sanaesencia.app.viewmodel.UserViewModel
 
+// ==========================================
+// Pantalla de Inicio de Sesión (Login)
+// ==========================================
 @Composable
 fun LoginScreen(
     viewModel: UserViewModel,
@@ -30,9 +33,16 @@ fun LoginScreen(
     onNavigateToSignUp: () -> Unit,
     onNavigateToForgotPassword: () -> Unit
 ) {
-    // Estado y validación centralizados en UserViewModel (MVVM desacoplado)
-    val state by viewModel.loginFormState.collectAsState()
-    var passwordVisible by remember { mutableStateOf(false) }
+    // ------------------------------------------
+    // Estado y Validación del Formulario de Inicio de Sesión
+    // ------------------------------------------
+    var run by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var showError by remember { mutableStateOf(false) }
+
+    val isRunValid = remember(run) { run.isBlank() || Validators.isValidRUN(run) }
+    val isPasswordValid = remember(password) { password.isBlank() || Validators.isValidPassword(password) }
+    val isFormValid = run.isNotBlank() && isRunValid && password.isNotBlank() && isPasswordValid
 
     Column(
         modifier = Modifier
@@ -41,6 +51,9 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // ------------------------------------------
+        // Identidad Visual y Bienvenida
+        // ------------------------------------------
         Image(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo Sanaesencia",
@@ -55,7 +68,9 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Campo RUN / Usuario con leadingIcon y validación centralizada
+        // ------------------------------------------
+        // Campos de Entrada: RUN / Usuario y Contraseña
+        // ------------------------------------------
         OutlinedTextField(
             value = state.run,
             onValueChange = { viewModel.onLoginRunChanged(it) },
@@ -137,6 +152,9 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // ------------------------------------------
+        // Botón Principal de Envío / Inicio de Sesión
+        // ------------------------------------------
         Button(
             onClick = { viewModel.submitLogin(onSuccess = onLoginSuccess) },
             enabled = state.isFormValid && !state.isLoading,
@@ -157,6 +175,9 @@ fun LoginScreen(
             }
         }
 
+        // ------------------------------------------
+        // Enlaces de Navegación a Recuperación y Registro
+        // ------------------------------------------
         Spacer(modifier = Modifier.height(16.dp))
         TextButton(onClick = onNavigateToForgotPassword) {
             Text("¿Olvidaste tu contraseña?")

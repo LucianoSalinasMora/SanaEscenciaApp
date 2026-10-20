@@ -14,6 +14,9 @@ import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.data.UserEntity
 import com.sanaesencia.app.viewmodel.UserViewModel
 
+// ==========================================
+// Pantalla de Recuperación de Contraseña (3 Pasos)
+// ==========================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForgotPasswordScreen(
@@ -21,6 +24,7 @@ fun ForgotPasswordScreen(
     onBack: () -> Unit,
     onPasswordResetSuccess: () -> Unit
 ) {
+    // Control de paso actual (1: RUN, 2: Pregunta Seguridad, 3: Nueva Clave)
     var step by remember { mutableIntStateOf(1) }
 
     var run by remember { mutableStateOf("") }
@@ -46,6 +50,9 @@ fun ForgotPasswordScreen(
             modifier = Modifier.padding(padding).padding(24.dp).fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // ------------------------------------------
+            // Paso 1: Búsqueda de Usuario por RUN
+            // ------------------------------------------
             // --- PASO 1: Ingresar RUN ---
             OutlinedTextField(
                 value = run,
@@ -78,6 +85,9 @@ fun ForgotPasswordScreen(
                 ) { Text("Buscar Usuario") }
             }
 
+            // ------------------------------------------
+            // Paso 2: Validación de la Pregunta de Seguridad
+            // ------------------------------------------
             // --- PASO 2: Pregunta de Seguridad ---
             if (step >= 2 && fetchedUser != null) {
                 HorizontalDivider(
@@ -117,6 +127,9 @@ fun ForgotPasswordScreen(
                 }
             }
 
+            // ------------------------------------------
+            // Paso 3: Asignación y Guardado de Nueva Contraseña
+            // ------------------------------------------
             // --- PASO 3: Nueva Contraseña ---
             if (step == 3) {
                 HorizontalDivider(

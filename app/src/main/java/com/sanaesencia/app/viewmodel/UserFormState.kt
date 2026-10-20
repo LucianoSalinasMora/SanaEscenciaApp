@@ -1,5 +1,8 @@
 package com.sanaesencia.app.viewmodel
 
+// ==========================================
+// Estado Reactivo del Formulario de Inicio de Sesión (Login)
+// ==========================================
 /**
  * Estado reactivo del formulario de inicio de sesión (Login).
  * Desacopla la lógica de validación de la interfaz de usuario (Compose).
@@ -14,6 +17,9 @@ data class LoginFormState(
     val isLoading: Boolean = false
 )
 
+// ==========================================
+// Estado Reactivo del Formulario de Registro (Sign Up)
+// ==========================================
 /**
  * Estado reactivo del formulario de registro de nuevos pacientes (Sign Up).
  * Centraliza validaciones de RUT/RUN, correo, teléfono y contraseñas.

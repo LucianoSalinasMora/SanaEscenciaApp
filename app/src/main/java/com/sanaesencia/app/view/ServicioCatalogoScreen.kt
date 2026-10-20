@@ -12,12 +12,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.viewmodel.UserViewModel
 
+// ==========================================
+// Pantalla de Catálogo de Servicios y Especialidades
+// ==========================================
 @Composable
 fun ServiciosCatalogoScreen(
     userViewModel: UserViewModel,
     onAgendar: () -> Unit,
     onVerProductos: () -> Unit = {}
 ) {
+    // ------------------------------------------
+    // Observación y Agrupación de Profesionales por Especialidad
+    // ------------------------------------------
     val profesionales by userViewModel.professionals.collectAsState()
 
     // Agrupa a los profesionales por especialidad y ordena las especialidades alfabéticamente

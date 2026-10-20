@@ -33,6 +33,9 @@ import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
 
+// ==========================================
+// Pantalla de Agendamiento de Citas Médicas y Terapéuticas
+// ==========================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingScreen(
@@ -41,6 +44,9 @@ fun BookingScreen(
     onBookingSuccess: (AppointmentEntity) -> Unit,
     onBack: () -> Unit
 ) {
+    // ------------------------------------------
+    // Observación de Estados Reactivos y Contexto
+    // ------------------------------------------
     val currentUser by userViewModel.currentUser.collectAsState()
     val dbProfessionals by userViewModel.professionals.collectAsState()
     val allAppointments by bookingViewModel.appointments.collectAsState()
@@ -528,6 +534,9 @@ fun BookingScreen(
         }
     }
 
+    // ------------------------------------------
+    // Selector de Fecha (DatePicker Dialog con Validación de Días Hábiles)
+    // ------------------------------------------
     // Componente Calendario
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
@@ -557,6 +566,9 @@ fun BookingScreen(
     }
 }
 
+// ==========================================
+// Validador de Fechas Disponibles (Solo Días Hábiles y No Pasados)
+// ==========================================
 @OptIn(ExperimentalMaterial3Api::class)
 object DateValidators {
     val weekdayOnlyValidator = object : SelectableDates {
@@ -573,6 +585,9 @@ object DateValidators {
     }
 }
 
+// ==========================================
+// Función Auxiliar: Parseo de Cadena de Horario a LocalTime
+// ==========================================
 private fun parseSlotToLocalTime(slot: String): LocalTime {
     val clean = slot.trim()
     val parts = clean.split(" ")

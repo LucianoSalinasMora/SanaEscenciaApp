@@ -2,11 +2,17 @@ package com.sanaesencia.app.data
 
 import kotlinx.coroutines.flow.Flow
 
+// ==========================================
+// Repositorio de Usuarios y Autenticación
+// ==========================================
 class UserRepository(private val userDao: UserDao) {
 
     @Volatile
     private var isSeeded = false
 
+    // ------------------------------------------
+    // Usuario Administrador Inicial por Defecto
+    // ------------------------------------------
     // Usuario administrador por defecto
     private val defaultAdmin = UserEntity(
         run = "admin",
@@ -19,6 +25,9 @@ class UserRepository(private val userDao: UserDao) {
         securityAnswer = "admin"
     )
 
+    // ------------------------------------------
+    // Inicialización y Sembrado de Datos de Usuario
+    // ------------------------------------------
     suspend fun seedInitialData() {
         if (isSeeded) return
         try {
@@ -30,6 +39,9 @@ class UserRepository(private val userDao: UserDao) {
         }
     }
 
+    // ------------------------------------------
+    // Operaciones CRUD de Usuarios
+    // ------------------------------------------
     suspend fun insertUser(user: UserEntity) {
         userDao.insertUser(user)
     }
@@ -42,6 +54,9 @@ class UserRepository(private val userDao: UserDao) {
         userDao.deleteUser(run)
     }
 
+    // ------------------------------------------
+    // Lógica de Inicio de Sesión y Autenticación
+    // ------------------------------------------
     suspend fun login(run: String, password: String): UserEntity? {
         val cleanRun = run.trim()
         val formattedRun = cleanRun.replace(".", "").replace("-", "").uppercase()
@@ -57,6 +72,9 @@ class UserRepository(private val userDao: UserDao) {
             ?: userDao.login(formattedRun, password)
     }
 
+    // ------------------------------------------
+    // Búsqueda y Consulta de Usuarios por RUN o Rol
+    // ------------------------------------------
     suspend fun getUserByRun(run: String): UserEntity? {
         val cleanRun = run.trim()
         val formattedRun = cleanRun.replace(".", "").replace("-", "").uppercase()
@@ -75,6 +93,9 @@ class UserRepository(private val userDao: UserDao) {
         return userDao.getUsersByRole(role.name)
     }
 
+    // ------------------------------------------
+    // Actualización de Contraseña
+    // ------------------------------------------
     suspend fun updatePassword(run: String, newPassword: String) {
         val cleanRun = run.trim()
         val formattedRun = cleanRun.replace(".", "").replace("-", "").uppercase()

@@ -7,8 +7,14 @@ import android.provider.ContactsContract
 import android.widget.Toast
 import java.net.URLEncoder
 
+// ==========================================
+// Ayudante de Integración de Contacto y Mensajería
+// ==========================================
 object ContactHelper {
 
+    // ------------------------------------------
+    // Apertura e Interacción con WhatsApp
+    // ------------------------------------------
     /**
      * Redirige directamente a la app de WhatsApp o a su web con un mensaje predeterminado.
      */
@@ -36,6 +42,9 @@ object ContactHelper {
         }
     }
 
+    // ------------------------------------------
+    // Guardado Nativo en Libreta de Contactos
+    // ------------------------------------------
     /**
      * Abre el formulario nativo del teléfono para agregar a Centro Sanaesencia a los contactos.
      */

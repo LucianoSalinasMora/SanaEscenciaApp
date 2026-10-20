@@ -40,6 +40,9 @@ import com.sanaesencia.app.viewmodel.BookingViewModel
 import com.sanaesencia.app.viewmodel.ProductViewModel
 import com.sanaesencia.app.viewmodel.UserViewModel
 
+// ==========================================
+// Pantalla Principal Contenedora (Dashboards, Pestañas y Roles)
+// ==========================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
@@ -51,6 +54,9 @@ fun MainScreen(
     notificationHelper: NotificationHelper,
     onLogout: () -> Unit // Acción para cerrar sesión
 ) {
+    // ------------------------------------------
+    // Controladores de Navegación y Estados de Diálogo
+    // ------------------------------------------
     val context = LocalContext.current
     val bottomNavController = rememberNavController()
 
@@ -283,6 +289,9 @@ fun MainScreen(
     }
 }
 
+// ==========================================
+// Hoja Modal: Centro de Notificaciones y Alertas (Paciente)
+// ==========================================
 @Composable
 fun NotificationCenterContent(
     notifications: List<AppNotification>,
@@ -414,6 +423,9 @@ fun NotificationCenterContent(
     }
 }
 
+// ==========================================
+// Componente de Tarjeta de Notificación Individual
+// ==========================================
 @Composable
 fun NotificationCardItem(notification: AppNotification) {
     val (icon, iconColor, containerColor) = when (notification.category) {

@@ -1,6 +1,7 @@
 package com.sanaesencia.app.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.sanaesencia.app.data.UserEntity
 import com.sanaesencia.app.data.UserRepository
@@ -14,19 +15,32 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+// ==========================================
+// ViewModel para Autenticación, Usuarios y Profesionales
+// ==========================================
 class UserViewModel(private val repository: UserRepository) : ViewModel() {
 
+    // ------------------------------------------
+    // Estado del Usuario Actualmente Autenticado
+    // ------------------------------------------
     private val _currentUser = MutableStateFlow<UserEntity?>(null)
     val currentUser: StateFlow<UserEntity?> = _currentUser.asStateFlow()
 
-    // --- ESTADO Y VALIDACIÓN CENTRALIZADA DE LOGIN ---
+    // ------------------------------------------
+    // Estado y Validación Reactiva del Formulario de Login
+    // ------------------------------------------
     private val _loginFormState = MutableStateFlow(LoginFormState())
     val loginFormState: StateFlow<LoginFormState> = _loginFormState.asStateFlow()
 
-    // --- ESTADO Y VALIDACIÓN CENTRALIZADA DE REGISTRO (SIGNUP) ---
+    // ------------------------------------------
+    // Estado y Validación Reactiva del Formulario de Registro
+    // ------------------------------------------
     private val _signUpFormState = MutableStateFlow(SignUpFormState())
     val signUpFormState: StateFlow<SignUpFormState> = _signUpFormState.asStateFlow()
 
+    // ------------------------------------------
+    // Flujo Reactivo de la Lista de Profesionales Activos
+    // ------------------------------------------
     val professionals: StateFlow<List<UserEntity>> = repository.getUsersByRole(UserRole.PROFESIONAL)
         .stateIn(
             scope = viewModelScope,
@@ -34,11 +48,15 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
             initialValue = emptyList()
         )
 
+    // ------------------------------------------
+    // Inicialización y Sembrado de Usuarios
+    // ------------------------------------------
     init {
         viewModelScope.launch {
             repository.seedInitialData()
         }
     }
+
 
     // ==========================================
     // MÉTODOS DE FORMULARIO DE LOGIN (DESACOPLADO)
@@ -218,8 +236,10 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
     }
 
     // ==========================================
-    // OPERACIONES GENERALES DEL REPOSITORIO
-    // ==========================================
+    // Operaciones Generales del Repositorio y Perfil
+    // ------------------------------------------
+    // Registro y Consulta de Usuarios
+    // ------------------------------------------
     fun registerUser(user: UserEntity, onSuccess: () -> Unit) {
         viewModelScope.launch {
             repository.insertUser(user)
@@ -237,6 +257,9 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
+    // ------------------------------------------
+    // Actualización de Perfil de Usuario
+    // ------------------------------------------
     fun updateUserProfile(name: String, email: String, phone: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             val current = _currentUser.value ?: return@launch
@@ -247,6 +270,9 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
+    // ------------------------------------------
+    // Gestión de Profesionales (Admin)
+    // ------------------------------------------
     fun registerProfessional(user: UserEntity, onSuccess: () -> Unit) {
         viewModelScope.launch {
             repository.insertUser(user.copy(role = UserRole.PROFESIONAL))
@@ -261,6 +287,9 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
         }
     }
 
+    // ------------------------------------------
+    // Recuperación de Contraseña y Cierre de Sesión
+    // ------------------------------------------
     fun getUserByRun(run: String, onResult: (UserEntity?) -> Unit) {
         viewModelScope.launch {
             val user = repository.getUserByRun(run)
@@ -279,5 +308,22 @@ class UserViewModel(private val repository: UserRepository) : ViewModel() {
         _currentUser.value = null
         resetLoginForm()
         resetSignUpForm()
+    }
+}
+
+// ==========================================
+// Factoría para Instanciación de UserViewModel
+// ==========================================
+class UserViewModelFactory(private val repository: UserRepository) : ViewModelProvider.Factory {
+
+    // ------------------------------------------
+    // Creación y Casteo de la Instancia de ViewModel
+    // ------------------------------------------
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(UserViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return UserViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

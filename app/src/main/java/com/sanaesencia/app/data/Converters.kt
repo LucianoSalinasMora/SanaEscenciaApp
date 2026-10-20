@@ -2,12 +2,22 @@ package com.sanaesencia.app.data
 
 import androidx.room.TypeConverter
 
+// ==========================================
+// Convertidores de Tipos para Persistencia en Room
+// ==========================================
 class Converters {
+
+    // ------------------------------------------
+    // Conversión de Enum UserRole a String
+    // ------------------------------------------
     @TypeConverter
     fun fromUserRole(role: UserRole?): String? {
         return role?.name
     }
 
+    // ------------------------------------------
+    // Conversión de String a Enum UserRole
+    // ------------------------------------------
     @TypeConverter
     fun toUserRole(value: String?): UserRole? {
         return if (value != null) {

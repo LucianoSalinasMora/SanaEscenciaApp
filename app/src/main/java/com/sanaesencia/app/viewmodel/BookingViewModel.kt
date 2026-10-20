@@ -1,6 +1,7 @@
 package com.sanaesencia.app.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.sanaesencia.app.data.AppointmentEntity
 import com.sanaesencia.app.data.AppointmentRepository
@@ -14,8 +15,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+// ==========================================
+// ViewModel para el Agendamiento y Gestión de Citas
+// ==========================================
 class BookingViewModel(private val repository: AppointmentRepository) : ViewModel() {
 
+    // ------------------------------------------
+    // Estados Reactivos del Formulario y Lista de Citas
+    // ------------------------------------------
     private val _uiState = MutableStateFlow(BookingFormState())
     val uiState: StateFlow<BookingFormState> = _uiState.asStateFlow()
 
@@ -26,6 +33,9 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
             initialValue = emptyList()
         )
 
+    // ------------------------------------------
+    // Carga de Datos del Paciente Autenticado
+    // ------------------------------------------
     fun loadPatientData(patient: UserEntity?) {
         if (patient != null) {
             _uiState.update {
@@ -39,6 +49,9 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
         }
     }
 
+    // ------------------------------------------
+    // Filtrado de Profesionales por Especialidad
+    // ------------------------------------------
     fun getAvailableProfessionals(dbProfessionals: List<UserEntity> = emptyList(), area: String): List<String> {
         val filteredFromDb = dbProfessionals.filter { it.specialty.equals(area, ignoreCase = true) }.map { it.name }
         return if (filteredFromDb.isNotEmpty()) {
@@ -49,6 +62,9 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
         }
     }
 
+    // ------------------------------------------
+    // Manejadores de Eventos del Formulario de Agendamiento
+    // ------------------------------------------
     fun onAreaChanged(area: String, defaultProfessional: String = "", dbProfessionals: List<UserEntity> = emptyList()) {
         val pro = if (defaultProfessional.isNotBlank()) {
             defaultProfessional
@@ -97,6 +113,9 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
         _uiState.update { it.copy(errorMessage = null) }
     }
 
+    // ------------------------------------------
+    // Validación de Integridad del Formulario
+    // ------------------------------------------
     private fun validateForm(dbProfessionals: List<UserEntity> = emptyList()) {
         val state = _uiState.value
         val availablePros = getAvailableProfessionals(dbProfessionals, state.serviceType)
@@ -111,6 +130,9 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
         _uiState.update { it.copy(isFormValid = isValid) }
     }
 
+    // ------------------------------------------
+    // Cancelación y Eliminación de Citas
+    // ------------------------------------------
     fun cancelAppointment(id: Long, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             repository.cancelAppointment(id)
@@ -125,6 +147,9 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
         }
     }
 
+    // ------------------------------------------
+    // Confirmación y Envío de la Cita Médica
+    // ------------------------------------------
     fun submitBooking(
         onSuccess: (AppointmentEntity) -> Unit,
         onError: ((String) -> Unit)? = null
@@ -175,5 +200,24 @@ class BookingViewModel(private val repository: AppointmentRepository) : ViewMode
                 onError?.invoke("Error al guardar la cita en el sistema.")
             }
         }
+    }
+}
+
+// ==========================================
+// Factoría para Instanciación de BookingViewModel
+// ==========================================
+class BookingViewModelFactory(
+    private val repository: AppointmentRepository
+) : ViewModelProvider.Factory {
+
+    // ------------------------------------------
+    // Creación y Casteo de la Instancia de ViewModel
+    // ------------------------------------------
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(BookingViewModel::class.java)) {
+            return BookingViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Clase ViewModel desconocida: ${modelClass.name}")
     }
 }

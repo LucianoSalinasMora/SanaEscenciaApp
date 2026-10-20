@@ -5,6 +5,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+// ==========================================
+// Modelo de Información Institucional "Nosotros"
+// ==========================================
 data class NosotrosInfo(
     val title: String = "Centro Integrativo Sanaesencia",
     val description: String = "Salud mental infanto-juvenil, familia y bienestar integrativo. Atendemos de forma presencial en nuestros 8 boxes de Los Vilos y online para todo Chile y el extranjero.",
@@ -14,7 +17,13 @@ data class NosotrosInfo(
     val schedule: String = "Lunes a Viernes 09:00 - 19:00 hrs"
 )
 
+// ==========================================
+// Administrador de Persistencia de "Nosotros" con SharedPreferences
+// ==========================================
 object NosotrosManager {
+    // ------------------------------------------
+    // Constantes de Claves de SharedPreferences
+    // ------------------------------------------
     private const val PREFS_NAME = "nosotros_prefs"
     private const val KEY_TITLE = "title"
     private const val KEY_DESC = "description"
@@ -23,11 +32,17 @@ object NosotrosManager {
     private const val KEY_EMAIL = "email"
     private const val KEY_SCHEDULE = "schedule"
 
+    // ------------------------------------------
+    // Estado Reactivo en Memoria
+    // ------------------------------------------
     private val _infoState = MutableStateFlow(NosotrosInfo())
     val infoState: StateFlow<NosotrosInfo> = _infoState.asStateFlow()
 
     private var isInitialized = false
 
+    // ------------------------------------------
+    // Inicialización y Carga de Preferencias
+    // ------------------------------------------
     fun init(context: Context) {
         if (!isInitialized) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -46,6 +61,9 @@ object NosotrosManager {
         }
     }
 
+    // ------------------------------------------
+    // Guardado y Actualización de Información
+    // ------------------------------------------
     fun saveInfo(context: Context, newInfo: NosotrosInfo) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit()

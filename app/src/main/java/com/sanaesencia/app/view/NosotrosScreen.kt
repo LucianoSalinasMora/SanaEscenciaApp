@@ -1,14 +1,7 @@
 package com.sanaesencia.app.view
 
-import android.Manifest
+import android.content.Intent
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,12 +9,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.sanaesencia.app.R
 import com.sanaesencia.app.data.ContactHelper
 import com.sanaesencia.app.data.LocationHelper
@@ -39,11 +36,24 @@ import com.sanaesencia.app.data.NosotrosInfo
 import com.sanaesencia.app.data.NosotrosManager
 import java.util.Locale
 
+// ==========================================
+// Pantalla Institucional: Nosotros y Ubicación de la Sede
+// ==========================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NosotrosScreen(role: String = "PACIENTE") {
     val context = LocalContext.current
     val nosotrosInfo by NosotrosManager.infoState.collectAsState()
+    val mapsUrl = "https://maps.app.goo.gl/3hFvN2dRbjQkc5vq5"
+
+    fun openGoogleMaps() {
+        val intent = Intent(Intent.ACTION_VIEW, mapsUrl.toUri())
+        try {
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            Toast.makeText(context, "No se pudo abrir la aplicación de mapas", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     // Integración de Recurso Nativo: GPS (LocationHelper)
     val locationHelper = remember { LocationHelper(context) }
@@ -219,49 +229,49 @@ fun NosotrosScreen(role: String = "PACIENTE") {
             }
         }
 
-        // --- TARJETA DE LOCALIZACIÓN GPS Y ORIENTACIÓN PRESENCIAL (RECURSO NATIVO) ---
+        // ------------------------------------------
+        // Tarjeta de Ubicación y Mapa Interactivo
+        // ------------------------------------------
         item {
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { openGoogleMaps() },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { locationHelper.openDirectionsToCenter(context) }
-                    ) {
+                    Box(modifier = Modifier.fillMaxWidth()) {
                         Image(
                             painter = painterResource(id = R.drawable.img_map_preview),
-                            contentDescription = "Mapa Sede Los Vilos",
+                            contentDescription = "Mapa Ubicación Sanaesencia Caupolicán 220",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(160.dp)
+                                .height(180.dp)
                         )
 
                         Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f),
                             shape = CircleShape,
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
-                                .padding(10.dp)
+                                .padding(12.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                                     contentDescription = "Abrir Google Maps",
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(14.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Ver en Maps",
-                                    style = MaterialTheme.typography.labelSmall,
+                                    text = "Abrir Maps",
+                                    style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
@@ -271,140 +281,49 @@ fun NosotrosScreen(role: String = "PACIENTE") {
 
                     Column(
                         modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.LocationOn,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Sede Presencial y Geolocalización (GPS)",
+                                text = "Ubicación Presencial",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                         }
 
                         Text(
-                            text = "Caupolicán 220, Los Vilos • 8 boxes de atención integral",
+                            text = nosotrosInfo.address,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
 
                         Text(
-                            text = "Utiliza el GPS de tu dispositivo para orientar tu llegada a la sede o comprobar si te encuentras en el rango recomendado para atenciones presenciales u online.",
+                            text = "Toca la imagen o presiona el botón para abrir la ruta en Google Maps.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.secondary
                         )
 
-                        // Botones para consultar GPS y abrir Maps
-                        Row(
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Button(
+                            onClick = { openGoogleMaps() },
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
-                            Button(
-                                onClick = { consultarGps() },
-                                enabled = !isCheckingGps,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                if (isCheckingGps) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                        strokeWidth = 2.dp
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Calculando...", style = MaterialTheme.typography.labelMedium)
-                                } else {
-                                    Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Calcular GPS", style = MaterialTheme.typography.labelMedium)
-                                }
-                            }
-
-                            OutlinedButton(
-                                onClick = { locationHelper.openDirectionsToCenter(context) },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(Icons.Default.Directions, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Cómo Llegar", style = MaterialTheme.typography.labelMedium)
-                            }
-                        }
-
-                        // Resultado animado del cálculo de proximidad
-                        AnimatedVisibility(
-                            visible = gpsDistanceKm != null || gpsErrorMessage != null,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
-                        ) {
-                            if (gpsErrorMessage != null) {
-                                Card(
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Warning,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = gpsErrorMessage ?: "",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onErrorContainer
-                                        )
-                                    }
-                                }
-                            } else if (gpsDistanceKm != null) {
-                                val isNear = gpsIsNear == true
-                                val cardBg = if (isNear) Color(0xFFE8F5E9) else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-                                val iconTint = if (isNear) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary
-
-                                Card(
-                                    colors = CardDefaults.cardColors(containerColor = cardBg),
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(12.dp),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = if (isNear) Icons.Default.CheckCircle else Icons.Default.Info,
-                                                contentDescription = null,
-                                                tint = iconTint,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = "Distancia a la sede: ${String.format(Locale.getDefault(), "%.1f", gpsDistanceKm)} km",
-                                                style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = iconTint
-                                            )
-                                        }
-                                        Text(
-                                            text = if (isNear) {
-                                                "¡Estás en la zona de Los Vilos! Te encuentras a menos de 20 km. Tu mejor opción es atención presencial en nuestros 8 boxes."
-                                            } else {
-                                                "Te encuentras a más de 20 km de Los Vilos. Puedes optar por atención presencial si tienes transporte, o elegir atención Online vía MEDIlink."
-                                            },
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                }
-                            }
+                            Icon(
+                                imageVector = Icons.Default.Place,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Ver Ubicación en Google Maps")
                         }
                     }
                 }

@@ -15,6 +15,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.viewmodel.UserViewModel
 
+// ==========================================
+// Pantalla de Registro de Nuevos Pacientes
+// ==========================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
@@ -22,9 +25,32 @@ fun SignUpScreen(
     onRegisterSuccess: () -> Unit,
     onBack: () -> Unit
 ) {
-    // Estado y validación centralizados en UserViewModel (MVVM desacoplado)
-    val state by viewModel.signUpFormState.collectAsState()
-    var passwordVisible by remember { mutableStateOf(false) }
+    // ------------------------------------------
+    // Estados y Validaciones del Formulario de Registro
+    // ------------------------------------------
+    var run by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var securityQuestion by remember { mutableStateOf("¿Nombre de tu primera mascota?") }
+    var securityAnswer by remember { mutableStateOf("") }
+
+    val isRunValid = remember(run) { run.isBlank() || Validators.isValidRUN(run) }
+    val isNameValid = remember(name) { name.isBlank() || Validators.isValidName(name) }
+    val isEmailValid = remember(email) { email.isBlank() || Validators.isValidEmail(email) }
+    val isPhoneValid = remember(phone) { phone.isBlank() || Validators.isValidPhone(phone) }
+    val isPasswordValid = remember(password) { password.isBlank() || Validators.isValidPassword(password) }
+    val isSecurityAnswerValid = remember(securityAnswer) { securityAnswer.isBlank() || securityAnswer.trim().length >= 2 }
+
+    val isFormCompleteAndValid = run.isNotBlank() && isRunValid &&
+            name.isNotBlank() && isNameValid &&
+            email.isNotBlank() && isEmailValid &&
+            phone.isNotBlank() && isPhoneValid &&
+            password.isNotBlank() && isPasswordValid &&
+            securityQuestion.isNotBlank() &&
+            securityAnswer.isNotBlank() && isSecurityAnswerValid
+
 
     Scaffold(
         topBar = {
