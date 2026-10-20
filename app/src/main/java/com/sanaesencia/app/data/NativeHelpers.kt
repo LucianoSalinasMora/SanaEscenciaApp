@@ -74,24 +74,6 @@ class LocationHelper(private val context: Context) {
     }
 
     // ------------------------------------------
-    // Comprobación de Permisos de Ubicación
-    // ------------------------------------------
-    /**
-     * Verifica si la aplicación cuenta con permisos de ubicación (Fina o Coarse).
-     */
-    fun hasLocationPermission(): Boolean {
-        val fineLocation = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-        val coarseLocation = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-        return fineLocation || coarseLocation
-    }
-
-    // ------------------------------------------
     // Cálculo de Distancia y Proximidad al Centro
     // ------------------------------------------
     /**

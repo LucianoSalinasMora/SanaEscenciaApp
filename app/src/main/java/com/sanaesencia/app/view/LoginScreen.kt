@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.R
 import com.sanaesencia.app.data.UserRole
+import com.sanaesencia.app.data.Validators
 import com.sanaesencia.app.viewmodel.UserViewModel
 
 // ==========================================
@@ -36,13 +37,8 @@ fun LoginScreen(
     // ------------------------------------------
     // Estado y Validación del Formulario de Inicio de Sesión
     // ------------------------------------------
-    var run by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var showError by remember { mutableStateOf(false) }
-
-    val isRunValid = remember(run) { run.isBlank() || Validators.isValidRUN(run) }
-    val isPasswordValid = remember(password) { password.isBlank() || Validators.isValidPassword(password) }
-    val isFormValid = run.isNotBlank() && isRunValid && password.isNotBlank() && isPasswordValid
+    val state by viewModel.loginFormState.collectAsState()
+    var passwordVisible by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
