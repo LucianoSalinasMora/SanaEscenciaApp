@@ -6,10 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -170,6 +167,7 @@ fun AddOrEditProfessionalDialog(
                     onValueChange = { if (professionalToEdit == null) run = it },
                     enabled = professionalToEdit == null,
                     label = { Text("RUN del Profesional") },
+                    leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     isError = !isRunValid,
                     supportingText = { if (!isRunValid) Text("RUN inválido", color = MaterialTheme.colorScheme.error) },
                     modifier = Modifier.fillMaxWidth()
@@ -178,6 +176,7 @@ fun AddOrEditProfessionalDialog(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Nombre Completo") },
+                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     isError = !isNameValid,
                     supportingText = { if (!isNameValid) Text("Mínimo 3 caracteres", color = MaterialTheme.colorScheme.error) },
                     modifier = Modifier.fillMaxWidth()
@@ -186,6 +185,7 @@ fun AddOrEditProfessionalDialog(
                     value = specialty,
                     onValueChange = { specialty = it },
                     label = { Text("Especialidad médica") },
+                    leadingIcon = { Icon(Icons.Default.MedicalServices, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     isError = !isSpecialtyValid,
                     supportingText = { if (!isSpecialtyValid) Text("Campo obligatorio", color = MaterialTheme.colorScheme.error) },
                     modifier = Modifier.fillMaxWidth()
@@ -194,6 +194,7 @@ fun AddOrEditProfessionalDialog(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Correo Electrónico") },
+                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     isError = !isEmailValid,
                     supportingText = { if (!isEmailValid) Text("Formato correo inválido", color = MaterialTheme.colorScheme.error) },
                     modifier = Modifier.fillMaxWidth()
@@ -202,6 +203,7 @@ fun AddOrEditProfessionalDialog(
                     value = phone,
                     onValueChange = { phone = it },
                     label = { Text("Teléfono de Contacto") },
+                    leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     isError = !isPhoneValid,
                     supportingText = { if (!isPhoneValid) Text("Número de teléfono inválido", color = MaterialTheme.colorScheme.error) },
                     modifier = Modifier.fillMaxWidth()
@@ -210,6 +212,7 @@ fun AddOrEditProfessionalDialog(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Contraseña") },
+                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     visualTransformation = PasswordVisualTransformation(),
                     isError = !isPasswordValid,
                     supportingText = { if (!isPasswordValid) Text("Mínimo 4 caracteres", color = MaterialTheme.colorScheme.error) },

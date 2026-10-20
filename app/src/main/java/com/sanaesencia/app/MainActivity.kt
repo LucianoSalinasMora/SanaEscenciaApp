@@ -4,6 +4,10 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -89,7 +93,31 @@ class MainActivity : ComponentActivity() {
                     // ------------------------------------------
                     NavHost(
                         navController = navController,
-                        startDestination = Screen.Login.route
+                        startDestination = Screen.Login.route,
+                        enterTransition = {
+                            slideIntoContainer(
+                                AnimatedContentTransitionScope.SlideDirection.Start,
+                                animationSpec = tween(320)
+                            ) + fadeIn(animationSpec = tween(320))
+                        },
+                        exitTransition = {
+                            slideOutOfContainer(
+                                AnimatedContentTransitionScope.SlideDirection.Start,
+                                animationSpec = tween(320)
+                            ) + fadeOut(animationSpec = tween(320))
+                        },
+                        popEnterTransition = {
+                            slideIntoContainer(
+                                AnimatedContentTransitionScope.SlideDirection.End,
+                                animationSpec = tween(320)
+                            ) + fadeIn(animationSpec = tween(320))
+                        },
+                        popExitTransition = {
+                            slideOutOfContainer(
+                                AnimatedContentTransitionScope.SlideDirection.End,
+                                animationSpec = tween(320)
+                            ) + fadeOut(animationSpec = tween(320))
+                        }
                     ) {
 
                         // ------------------------------------------

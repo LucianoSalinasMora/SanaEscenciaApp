@@ -31,8 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.sanaesencia.app.R
 import com.sanaesencia.app.data.ContactHelper
+import com.sanaesencia.app.data.LocationHelper
 import com.sanaesencia.app.data.NosotrosInfo
 import com.sanaesencia.app.data.NosotrosManager
+import java.util.Locale
 
 // ==========================================
 // Pantalla Institucional: Nosotros y Ubicación de la Sede
@@ -50,6 +52,57 @@ fun NosotrosScreen(role: String = "PACIENTE") {
             context.startActivity(intent)
         } catch (_: Exception) {
             Toast.makeText(context, "No se pudo abrir la aplicación de mapas", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Integración de Recurso Nativo: GPS (LocationHelper)
+    val locationHelper = remember { LocationHelper(context) }
+    var isCheckingGps by remember { mutableStateOf(false) }
+    var gpsDistanceKm by remember { mutableStateOf<Float?>(null) }
+    var gpsIsNear by remember { mutableStateOf<Boolean?>(null) }
+    var gpsErrorMessage by remember { mutableStateOf<String?>(null) }
+    var hasLocationPermission by remember { mutableStateOf(locationHelper.hasLocationPermission()) }
+
+    // Launcher para solicitar permisos de GPS en tiempo de ejecución
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+        onResult = { permissions ->
+            val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+            val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+            hasLocationPermission = fineGranted || coarseGranted
+            if (hasLocationPermission) {
+                isCheckingGps = true
+                gpsErrorMessage = null
+                locationHelper.checkProximityToCenter { isNear, dist, err ->
+                    isCheckingGps = false
+                    gpsIsNear = isNear
+                    gpsDistanceKm = dist
+                    gpsErrorMessage = err
+                }
+            } else {
+                isCheckingGps = false
+                gpsErrorMessage = "Para calcular la distancia y orientar la llegada a la sede presencial, concede los permisos de ubicación."
+            }
+        }
+    )
+
+    fun consultarGps() {
+        if (locationHelper.hasLocationPermission()) {
+            isCheckingGps = true
+            gpsErrorMessage = null
+            locationHelper.checkProximityToCenter { isNear, dist, err ->
+                isCheckingGps = false
+                gpsIsNear = isNear
+                gpsDistanceKm = dist
+                gpsErrorMessage = err
+            }
+        } else {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
         }
     }
 

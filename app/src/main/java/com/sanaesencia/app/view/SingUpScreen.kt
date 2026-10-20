@@ -5,14 +5,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import com.sanaesencia.app.data.UserEntity
-import com.sanaesencia.app.data.UserRole
-import com.sanaesencia.app.data.Validators
 import com.sanaesencia.app.viewmodel.UserViewModel
 
 // ==========================================
@@ -78,82 +78,155 @@ fun SignUpScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
+            // Mensaje de error general si ya existe el usuario
+            state.errorMessage?.let { errorMsg ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Error,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = errorMsg,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+            }
+
+            // Campo RUN con leadingIcon
             OutlinedTextField(
-                value = run,
-                onValueChange = { run = it.replace("\n", "").replace("\r", "") },
+                value = state.run,
+                onValueChange = { viewModel.onSignUpRunChanged(it) },
                 label = { Text("RUN (Ej: 12345678-9)") },
+                leadingIcon = {
+                    Icon(Icons.Default.Badge, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
                 singleLine = true,
                 maxLines = 1,
-                isError = !isRunValid,
-                supportingText = { if (!isRunValid) Text("RUN chileno inválido", color = MaterialTheme.colorScheme.error) },
+                isError = !state.isRunValid,
+                supportingText = {
+                    if (!state.isRunValid) Text("RUN chileno inválido", color = MaterialTheme.colorScheme.error)
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo Nombre Completo con leadingIcon
             OutlinedTextField(
-                value = name,
-                onValueChange = { name = it.replace("\n", "").replace("\r", "") },
+                value = state.name,
+                onValueChange = { viewModel.onSignUpNameChanged(it) },
                 label = { Text("Nombre Completo") },
+                leadingIcon = {
+                    Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
                 singleLine = true,
                 maxLines = 1,
-                isError = !isNameValid,
-                supportingText = { if (!isNameValid) Text("Mínimo 3 caracteres", color = MaterialTheme.colorScheme.error) },
+                isError = !state.isNameValid,
+                supportingText = {
+                    if (!state.isNameValid) Text("Mínimo 3 caracteres", color = MaterialTheme.colorScheme.error)
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo Correo Electrónico con leadingIcon
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it.replace("\n", "").replace("\r", "") },
+                value = state.email,
+                onValueChange = { viewModel.onSignUpEmailChanged(it) },
                 label = { Text("Correo Electrónico (ej. usuario@dominio.com)") },
+                leadingIcon = {
+                    Icon(Icons.Default.Email, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
                 singleLine = true,
                 maxLines = 1,
-                isError = !isEmailValid,
-                supportingText = { if (!isEmailValid) Text("Formato de correo inválido", color = MaterialTheme.colorScheme.error) },
+                isError = !state.isEmailValid,
+                supportingText = {
+                    if (!state.isEmailValid) Text("Formato de correo inválido", color = MaterialTheme.colorScheme.error)
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo Teléfono con leadingIcon
             OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it.replace("\n", "").replace("\r", "") },
+                value = state.phone,
+                onValueChange = { viewModel.onSignUpPhoneChanged(it) },
                 label = { Text("Teléfono (+56912345678)") },
+                leadingIcon = {
+                    Icon(Icons.Default.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
                 singleLine = true,
                 maxLines = 1,
-                isError = !isPhoneValid,
-                supportingText = { if (!isPhoneValid) Text("Número de teléfono inválido (8 a 12 dígitos)", color = MaterialTheme.colorScheme.error) },
+                isError = !state.isPhoneValid,
+                supportingText = {
+                    if (!state.isPhoneValid) Text("Número de teléfono inválido (8 a 12 dígitos)", color = MaterialTheme.colorScheme.error)
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo Contraseña con leadingIcon y toggle de visibilidad
             OutlinedTextField(
-                value = password,
-                onValueChange = { password = it.replace("\n", "").replace("\r", "") },
+                value = state.password,
+                onValueChange = { viewModel.onSignUpPasswordChanged(it) },
                 label = { Text("Contraseña") },
+                leadingIcon = {
+                    Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                        )
+                    }
+                },
                 singleLine = true,
                 maxLines = 1,
-                visualTransformation = PasswordVisualTransformation(),
-                isError = !isPasswordValid,
-                supportingText = { if (!isPasswordValid) Text("Mínimo 4 caracteres", color = MaterialTheme.colorScheme.error) },
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                isError = !state.isPasswordValid,
+                supportingText = {
+                    if (!state.isPasswordValid) Text("Mínimo 4 caracteres", color = MaterialTheme.colorScheme.error)
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             Text("Recuperación de cuenta", style = MaterialTheme.typography.titleSmall)
 
+            // Campo Pregunta de Seguridad con leadingIcon
             OutlinedTextField(
-                value = securityQuestion,
-                onValueChange = { securityQuestion = it.replace("\n", "").replace("\r", "") },
+                value = state.securityQuestion,
+                onValueChange = { viewModel.onSignUpSecurityQuestionChanged(it) },
                 label = { Text("Pregunta de Seguridad") },
+                leadingIcon = {
+                    Icon(Icons.Default.HelpOutline, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
                 singleLine = true,
                 maxLines = 1,
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Campo Respuesta de Seguridad con leadingIcon
             OutlinedTextField(
-                value = securityAnswer,
-                onValueChange = { securityAnswer = it.replace("\n", "").replace("\r", "") },
+                value = state.securityAnswer,
+                onValueChange = { viewModel.onSignUpSecurityAnswerChanged(it) },
                 label = { Text("Respuesta de Seguridad") },
+                leadingIcon = {
+                    Icon(Icons.Default.Key, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                },
                 singleLine = true,
                 maxLines = 1,
-                isError = !isSecurityAnswerValid,
-                supportingText = { if (!isSecurityAnswerValid) Text("Ingrese una respuesta válida", color = MaterialTheme.colorScheme.error) },
+                isError = !state.isSecurityAnswerValid,
+                supportingText = {
+                    if (!state.isSecurityAnswerValid) Text("Ingrese una respuesta válida (mínimo 2 caracteres)", color = MaterialTheme.colorScheme.error)
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -161,26 +234,24 @@ fun SignUpScreen(
 
             Button(
                 onClick = {
-                    val newUser = UserEntity(
-                        run = run.trim(),
-                        name = name.trim(),
-                        email = email.trim(),
-                        phone = phone.trim(),
-                        passwordHash = password.trim(),
-                        role = UserRole.PACIENTE,
-                        securityQuestion = securityQuestion.trim(),
-                        securityAnswer = securityAnswer.trim()
-                    )
-                    viewModel.registerUser(newUser) {
-                        onRegisterSuccess()
-                    }
+                    viewModel.submitSignUp(onSuccess = onRegisterSuccess)
                 },
-                enabled = isFormCompleteAndValid,
+                enabled = state.isFormValid && !state.isSubmitting,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
-                Text("Registrarse como Paciente")
+                if (state.isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Creando cuenta...")
+                } else {
+                    Text("Registrarse como Paciente")
+                }
             }
         }
     }

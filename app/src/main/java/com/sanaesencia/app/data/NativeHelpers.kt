@@ -11,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -49,9 +50,28 @@ data class AppNotification(
 class LocationHelper(private val context: Context) {
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
-    // Coordenadas Los Vilos (Caupolicán 220)
-    private val losVilosLat = -31.9123
-    private val losVilosLng = -71.5164
+    companion object {
+        // Coordenadas Los Vilos (Caupolicán 220)
+        const val LOS_VILOS_LAT = -31.9123
+        const val LOS_VILOS_LNG = -71.5164
+        const val CENTER_ADDRESS = "Caupolicán 220, Los Vilos"
+        const val PROXIMITY_THRESHOLD_KM = 20.0f
+    }
+
+    /**
+     * Verifica si la aplicación cuenta con permisos de ubicación (Fina o Coarse).
+     */
+    fun hasLocationPermission(): Boolean {
+        val fineLocation = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        val coarseLocation = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        return fineLocation || coarseLocation
+    }
 
     // ------------------------------------------
     // Comprobación de Permisos de Ubicación
@@ -80,21 +100,67 @@ class LocationHelper(private val context: Context) {
      * para recomendar atención presencial u online.
      */
     @SuppressLint("MissingPermission")
-    fun checkProximityToCenter(onResult: (isNear: Boolean, distanceKm: Float) -> Unit) {
-        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-            if (location != null) {
-                val centerLocation = Location("Sanaesencia").apply {
-                    latitude = losVilosLat
-                    longitude = losVilosLng
+    fun checkProximityToCenter(
+        onResult: (isNear: Boolean, distanceKm: Float, errorMsg: String?) -> Unit
+    ) {
+        if (!hasLocationPermission()) {
+            onResult(false, 0f, "Permiso de ubicación no concedido.")
+            return
+        }
+
+        val centerLocation = Location("Sanaesencia").apply {
+            latitude = LOS_VILOS_LAT
+            longitude = LOS_VILOS_LNG
+        }
+
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location: Location? ->
+                if (location != null) {
+                    val distanceInMeters = location.distanceTo(centerLocation)
+                    val distanceInKm = distanceInMeters / 1000f
+                    onResult(distanceInKm < PROXIMITY_THRESHOLD_KM, distanceInKm, null)
+                } else {
+                    // Si lastLocation es nulo (típico en emuladores o sin fijación previa), solicitamos ubicación actual
+                    try {
+                        fusedLocationClient.getCurrentLocation(
+                            com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
+                            null
+                        ).addOnSuccessListener { freshLocation: Location? ->
+                            if (freshLocation != null) {
+                                val distanceInMeters = freshLocation.distanceTo(centerLocation)
+                                val distanceInKm = distanceInMeters / 1000f
+                                onResult(distanceInKm < PROXIMITY_THRESHOLD_KM, distanceInKm, null)
+                            } else {
+                                onResult(false, 0f, "No se pudo obtener la señal GPS actual. Asegúrate de tener la ubicación activada en el dispositivo.")
+                            }
+                        }.addOnFailureListener { e ->
+                            onResult(false, 0f, "Error al consultar GPS: ${e.localizedMessage}")
+                        }
+                    } catch (e: Exception) {
+                        onResult(false, 0f, "No se pudo obtener la ubicación actual: ${e.localizedMessage}")
+                    }
                 }
-                val distanceInMeters = location.distanceTo(centerLocation)
-                val distanceInKm = distanceInMeters / 1000
-                onResult(distanceInKm < 20.0, distanceInKm)
-            } else {
-                onResult(false, 0f)
             }
-        }.addOnFailureListener {
-            onResult(false, 0f)
+            .addOnFailureListener { e ->
+                onResult(false, 0f, "Error al consultar GPS: ${e.localizedMessage}")
+            }
+    }
+
+    /**
+     * Abre Google Maps o el navegador con la ruta y destino hacia el Centro Sanaesencia en Los Vilos.
+     */
+    fun openDirectionsToCenter(ctx: Context) {
+        try {
+            val uri = Uri.parse("geo:$LOS_VILOS_LAT,$LOS_VILOS_LNG?q=$LOS_VILOS_LAT,$LOS_VILOS_LNG(Centro+Integrativo+Sanaesencia+-+Caupolicán+220,+Los+Vilos)")
+            val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            ctx.startActivity(intent)
+        } catch (_: Exception) {
+            val webUri = Uri.parse("https://www.google.com/maps/search/?api=1&query=$LOS_VILOS_LAT,$LOS_VILOS_LNG")
+            ctx.startActivity(Intent(Intent.ACTION_VIEW, webUri).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
         }
     }
 }

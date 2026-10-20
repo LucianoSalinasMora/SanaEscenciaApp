@@ -179,6 +179,7 @@ fun ProfileScreen(
                             value = name,
                             onValueChange = { name = it },
                             label = { Text("Nombre Completo") },
+                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                             isError = !isNameValid,
                             supportingText = { if (!isNameValid) Text("Mínimo 3 caracteres", color = MaterialTheme.colorScheme.error) },
                             modifier = Modifier.fillMaxWidth()
@@ -188,6 +189,7 @@ fun ProfileScreen(
                             value = email,
                             onValueChange = { email = it },
                             label = { Text("Correo Electrónico") },
+                            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                             isError = !isEmailValid,
                             supportingText = { if (!isEmailValid) Text("Formato correo inválido (ej. usuario@dominio.com)", color = MaterialTheme.colorScheme.error) },
                             modifier = Modifier.fillMaxWidth()
@@ -197,6 +199,7 @@ fun ProfileScreen(
                             value = phone,
                             onValueChange = { phone = it },
                             label = { Text("Teléfono de Contacto") },
+                            leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                             isError = !isPhoneValid,
                             supportingText = { if (!isPhoneValid) Text("Número inválido (8 a 12 dígitos)", color = MaterialTheme.colorScheme.error) },
                             modifier = Modifier.fillMaxWidth()
