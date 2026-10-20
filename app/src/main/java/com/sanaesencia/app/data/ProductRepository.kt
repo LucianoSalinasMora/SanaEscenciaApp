@@ -2,11 +2,20 @@ package com.sanaesencia.app.data
 
 import kotlinx.coroutines.flow.Flow
 
+// ==========================================
+// Repositorio para la Gestión de Productos
+// ==========================================
 class ProductRepository(private val productDao: ProductDao) {
 
+    // ------------------------------------------
+    // Flujos Reactivos de Productos
+    // ------------------------------------------
     val allProducts: Flow<List<ProductEntity>> = productDao.getAllProducts()
     val availableProducts: Flow<List<ProductEntity>> = productDao.getAvailableProducts()
 
+    // ------------------------------------------
+    // Operaciones CRUD de Productos
+    // ------------------------------------------
     suspend fun insertProduct(product: ProductEntity) {
         productDao.insertProduct(product)
     }
@@ -19,6 +28,9 @@ class ProductRepository(private val productDao: ProductDao) {
         productDao.deleteProduct(product)
     }
 
+    // ------------------------------------------
+    // Inicialización y Sembrado de Productos por Defecto
+    // ------------------------------------------
     suspend fun seedInitialProducts() {
         if (productDao.getCount() == 0) {
             val defaultProducts = listOf(

@@ -21,10 +21,16 @@ import com.sanaesencia.app.data.ContactHelper
 import com.sanaesencia.app.data.NosotrosManager
 import com.sanaesencia.app.viewmodel.ProductViewModel
 
+// ==========================================
+// Pantalla del Catálogo de Productos para Pacientes
+// ==========================================
 @Composable
 fun PatientProductsScreen(
     productViewModel: ProductViewModel
 ) {
+    // ------------------------------------------
+    // Observación de Productos y Datos de Contacto
+    // ------------------------------------------
     val context = LocalContext.current
     val productos by productViewModel.allProducts.collectAsState()
     val nosotrosInfo by NosotrosManager.infoState.collectAsState()

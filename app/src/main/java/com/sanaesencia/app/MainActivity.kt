@@ -34,28 +34,41 @@ import com.sanaesencia.app.viewmodel.ProductViewModelFactory
 import com.sanaesencia.app.viewmodel.UserViewModel
 import com.sanaesencia.app.viewmodel.UserViewModelFactory
 
+// ==========================================
+// Actividad Principal de la Aplicación
+// ==========================================
 class MainActivity : ComponentActivity() {
 
+    // ==========================================
+    // Ciclo de Vida: Inicialización de la Actividad
+    // ==========================================
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // ------------------------------------------
+        // Inicialización de Base de Datos y Repositorios
+        // ------------------------------------------
         val database = AppDatabase.getDatabase(this)
         val repository = AppointmentRepository(database.appointmentDao())
         val notificationHelper = NotificationHelper(this)
 
-        // 1. Inicializar los repositorios
+        // Inicializar los repositorios de datos
         val userRepository = UserRepository(database.userDao())
         val productRepository = ProductRepository(database.productDao())
         val aboutRepository = AboutRepository(database.aboutDao())
 
-
-
+        // ------------------------------------------
+        // Configuración de la UI con Jetpack Compose
+        // ------------------------------------------
         setContent {
             SanaesenciaTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    // ------------------------------------------
+                    // Instanciación de ViewModels mediante Factories
+                    // ------------------------------------------
                     val bookingViewModel: BookingViewModel = viewModel(
                         factory = BookingViewModelFactory(repository)
                     )
@@ -68,14 +81,20 @@ class MainActivity : ComponentActivity() {
                         factory = ProductViewModelFactory(productRepository)
                     )
 
+                    // Controlador de navegación global
                     val navController = rememberNavController()
 
+                    // ------------------------------------------
+                    // Grafo de Navegación Principal (NavHost)
+                    // ------------------------------------------
                     NavHost(
                         navController = navController,
                         startDestination = Screen.Login.route
                     ) {
 
-                        // --- PANTALLA DE LOGIN ---
+                        // ------------------------------------------
+                        // Destino: Pantalla de Inicio de Sesión (Login)
+                        // ------------------------------------------
                         composable(Screen.Login.route) {
                             LoginScreen(
                                 viewModel = userViewModel,
@@ -89,7 +108,9 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // --- PANTALLA DE REGISTRO ---
+                        // ------------------------------------------
+                        // Destino: Pantalla de Registro de Nuevos Usuarios
+                        // ------------------------------------------
                         composable(Screen.SignUp.route) {
                             SignUpScreen(
                                 viewModel = userViewModel,
@@ -101,7 +122,9 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // --- PANTALLA DE RECUPERAR CONTRASEÑA ---
+                        // ------------------------------------------
+                        // Destino: Pantalla de Recuperación de Contraseña
+                        // ------------------------------------------
                         composable(Screen.ForgotPassword.route) {
                             ForgotPasswordScreen(
                                 viewModel = userViewModel,
@@ -113,7 +136,9 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // --- PANTALLA PRINCIPAL (Dashboards con Navbars) ---
+                        // ------------------------------------------
+                        // Destino: Pantalla Principal con Dashboards y Navegación según Rol
+                        // ------------------------------------------
                         composable(Screen.Main.route) { backStackEntry ->
                             val role = backStackEntry.arguments?.getString("role") ?: UserRole.PACIENTE.name
 
@@ -132,7 +157,9 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // --- PANTALLA DE AGENDAR CITA ---
+                        // ------------------------------------------
+                        // Destino: Pantalla de Agendamiento de Citas
+                        // ------------------------------------------
                         composable(Screen.Booking.route) {
                             BookingScreen(
                                 userViewModel = userViewModel,

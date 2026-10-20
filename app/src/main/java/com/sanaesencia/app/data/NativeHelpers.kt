@@ -24,6 +24,9 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
+// ==========================================
+// Modelos y Categorías para Notificaciones
+// ==========================================
 enum class NotificationCategory(val title: String) {
     CONFIRMATION("Confirmación de Citas"),
     SEGUIMIENTO("Alertas de Seguimiento"),
@@ -40,13 +43,42 @@ data class AppNotification(
     val promoCode: String? = null
 )
 
-class LocationHelper(context: Context) {
+// ==========================================
+// Ayudante de Geolocalización y Proximidad (GPS)
+// ==========================================
+class LocationHelper(private val context: Context) {
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
     // Coordenadas Los Vilos (Caupolicán 220)
     private val losVilosLat = -31.9123
     private val losVilosLng = -71.5164
 
+    // ------------------------------------------
+    // Comprobación de Permisos de Ubicación
+    // ------------------------------------------
+    /**
+     * Verifica si la aplicación cuenta con permisos de ubicación (Fina o Coarse).
+     */
+    fun hasLocationPermission(): Boolean {
+        val fineLocation = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        val coarseLocation = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        return fineLocation || coarseLocation
+    }
+
+    // ------------------------------------------
+    // Cálculo de Distancia y Proximidad al Centro
+    // ------------------------------------------
+    /**
+     * Consulta el GPS del dispositivo para calcular la distancia en kilómetros
+     * a la sede presencial en Los Vilos. Determina si el paciente se encuentra cerca (< 20 km)
+     * para recomendar atención presencial u online.
+     */
     @SuppressLint("MissingPermission")
     fun checkProximityToCenter(onResult: (isNear: Boolean, distanceKm: Float) -> Unit) {
         fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
@@ -67,6 +99,9 @@ class LocationHelper(context: Context) {
     }
 }
 
+// ==========================================
+// Gestor de Notificaciones Push y Alertas del Sistema
+// ==========================================
 class NotificationHelper(private val context: Context) {
 
     companion object {
@@ -97,6 +132,9 @@ class NotificationHelper(private val context: Context) {
         createNotificationChannels()
     }
 
+    // ------------------------------------------
+    // Creación y Configuración de Canales de Notificación (Android 8.0+)
+    // ------------------------------------------
     private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
@@ -131,6 +169,9 @@ class NotificationHelper(private val context: Context) {
         }
     }
 
+    // ------------------------------------------
+    // Verificación de Permisos de Notificación (Android 13+)
+    // ------------------------------------------
     fun hasNotificationPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(
@@ -142,6 +183,9 @@ class NotificationHelper(private val context: Context) {
         }
     }
 
+    // ------------------------------------------
+    // Construcción de PendingIntent para Navegación al Pulsar
+    // ------------------------------------------
     private fun getIntentPendingIntent(): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -154,7 +198,9 @@ class NotificationHelper(private val context: Context) {
         )
     }
 
-    // --- 1. NOTIFICACIÓN PUSH DE CONFIRMACIÓN DE CITA ---
+    // ------------------------------------------
+    // Envío: Notificación Push de Confirmación de Cita
+    // ------------------------------------------
     fun sendBookingNotification(serviceName: String, date: String, timeSlot: String = "") {
         val title = "Cita Confirmada - Sanaesencia"
         val message = "Tu hora para $serviceName ha sido agendada con éxito para el $date${if (timeSlot.isNotBlank()) " a las $timeSlot" else ""}."
@@ -173,7 +219,9 @@ class NotificationHelper(private val context: Context) {
         notifySystem(builder.build())
     }
 
-    // --- 2. ALERTAS DE SEGUIMIENTO (CONTROLES Y REENGANCHE) ---
+    // ------------------------------------------
+    // Envío: Alertas de Seguimiento (Controles y Reenganche)
+    // ------------------------------------------
     fun sendFollowUpNotification(
         patientName: String,
         serviceName: String,
@@ -196,7 +244,9 @@ class NotificationHelper(private val context: Context) {
         notifySystem(builder.build())
     }
 
-    // --- 3. ALERTAS DE NOVEDADES Y PROMOCIONES ---
+    // ------------------------------------------
+    // Envío: Alertas de Novedades y Promociones
+    // ------------------------------------------
     fun sendPromoNotification(
         title: String,
         description: String,
@@ -222,6 +272,9 @@ class NotificationHelper(private val context: Context) {
         notifySystem(builder.build())
     }
 
+    // ------------------------------------------
+    // Gestión del Historial de Notificaciones en Memoria
+    // ------------------------------------------
     private fun addNotificationToState(
         title: String,
         message: String,

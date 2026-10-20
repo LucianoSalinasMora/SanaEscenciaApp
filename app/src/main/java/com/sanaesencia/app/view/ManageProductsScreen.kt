@@ -20,8 +20,14 @@ import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.data.ProductEntity
 import com.sanaesencia.app.viewmodel.ProductViewModel
 
+// ==========================================
+// Pantalla de Gestión de Productos y Kits (Administrador)
+// ==========================================
 @Composable
 fun ManageProductsScreen(viewModel: ProductViewModel) {
+    // ------------------------------------------
+    // Observación de Productos y Estados del Diálogo
+    // ------------------------------------------
     val productos by viewModel.allProducts.collectAsState()
 
     var mostrarDialogo by remember { mutableStateOf(false) }
@@ -32,6 +38,9 @@ fun ManageProductsScreen(viewModel: ProductViewModel) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // ------------------------------------------
+        // Barra Superior: Título y Botón de Nuevo Producto
+        // ------------------------------------------
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

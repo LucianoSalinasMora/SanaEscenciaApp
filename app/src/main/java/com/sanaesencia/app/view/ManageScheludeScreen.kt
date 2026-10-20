@@ -12,8 +12,14 @@ import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.data.isCancelled
 import com.sanaesencia.app.viewmodel.BookingViewModel
 
+// ==========================================
+// Pantalla de Gestión de Citas y Ocupación de Boxes (Administrador)
+// ==========================================
 @Composable
 fun ManageScheduleScreen(bookingViewModel: BookingViewModel) {
+    // ------------------------------------------
+    // Observación y Filtrado de Citas (Activas vs Canceladas)
+    // ------------------------------------------
     val citas by bookingViewModel.appointments.collectAsState()
 
     var filtroSeleccionado by remember { mutableStateOf("TODAS") }
@@ -148,6 +154,9 @@ fun ManageScheduleScreen(bookingViewModel: BookingViewModel) {
     }
 }
 
+// ==========================================
+// Componente de Tarjeta de Resumen Estadístico
+// ==========================================
 @Composable
 private fun ResumenCard(
     titulo: String,
@@ -182,6 +191,9 @@ private fun ResumenCard(
     }
 }
 
+// ==========================================
+// Componente de Tarjeta de Ocupación de Box
+// ==========================================
 @Composable
 private fun BoxCard(box: Int, cantidad: Int, modifier: Modifier = Modifier) {
     ElevatedCard(modifier = modifier) {

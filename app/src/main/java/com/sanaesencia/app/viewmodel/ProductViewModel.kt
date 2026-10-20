@@ -10,8 +10,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+// ==========================================
+// ViewModel para la Gestión de Productos y Catálogo
+// ==========================================
 class ProductViewModel(private val repository: ProductRepository) : ViewModel() {
 
+    // ------------------------------------------
+    // Flujos Reactivos de Productos (Totales y Disponibles)
+    // ------------------------------------------
     val allProducts: StateFlow<List<ProductEntity>> = repository.allProducts
         .stateIn(
             scope = viewModelScope,
@@ -28,12 +34,18 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
 
     val products: StateFlow<List<ProductEntity>> get() = allProducts
 
+    // ------------------------------------------
+    // Inicialización y Sembrado de Productos
+    // ------------------------------------------
     init {
         viewModelScope.launch {
             repository.seedInitialProducts()
         }
     }
 
+    // ------------------------------------------
+    // Operaciones de Creación, Actualización y Eliminación
+    // ------------------------------------------
     fun addProduct(name: String, description: String, price: Double, isAvailable: Boolean = true, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             repository.insertProduct(
@@ -69,4 +81,19 @@ class ProductViewModel(private val repository: ProductRepository) : ViewModel() 
     }
 }
 
+// ==========================================
+// Factoría para Instanciación de ProductViewModel
+// ==========================================
+class ProductViewModelFactory(private val repository: ProductRepository) : ViewModelProvider.Factory {
 
+    // ------------------------------------------
+    // Creación y Casteo de la Instancia de ViewModel
+    // ------------------------------------------
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(ProductViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return ProductViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}

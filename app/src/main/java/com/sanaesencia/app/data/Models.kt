@@ -3,10 +3,16 @@ package com.sanaesencia.app.data
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+// ==========================================
+// Enumeraciones de Roles y Estados del Sistema
+// ==========================================
 // 1. Enums para Roles y Estados
 enum class UserRole { PACIENTE, PROFESIONAL, ADMIN }
 enum class AppointmentState { PENDIENTE, CONFIRMADA, COMPLETADA, CANCELADA, NO_ASISTE }
 
+// ==========================================
+// Entidad Room: Usuarios y Credenciales
+// ==========================================
 // 2. Entidad de Usuario
 @Entity(tableName = "users")
 data class UserEntity(
@@ -21,6 +27,9 @@ data class UserEntity(
     val specialty: String = ""
 )
 
+// ==========================================
+// Modelo de Datos y Mock de Profesionales
+// ==========================================
 // 3. Modelo de Profesional y Datos Mock
 data class Professional(
     val id: String = "",
@@ -35,6 +44,9 @@ val mockProfessionals = listOf(
     Professional("4", "Dr. Juan Pablo Torres", "Nutrición Integrativa")
 )
 
+// ==========================================
+// Entidad Room: Productos y Catálogo Natural
+// ==========================================
 // 4. Entidad de Productos (Para el Admin con soporte de Imagen)
 @Entity(tableName = "products")
 data class ProductEntity(
@@ -47,6 +59,9 @@ data class ProductEntity(
     val stock: Int = 10
 )
 
+// ==========================================
+// Entidad Room: Reseñas y Testimonios de Pacientes
+// ==========================================
 // 5. Entidad de Reseñas (Pacientes escriben, Admin gestiona)
 @Entity(tableName = "reviews")
 data class ReviewEntity(

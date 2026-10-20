@@ -18,6 +18,9 @@ import com.sanaesencia.app.data.UserRole
 import com.sanaesencia.app.data.Validators
 import com.sanaesencia.app.viewmodel.UserViewModel
 
+// ==========================================
+// Pantalla de Inicio de Sesión (Login)
+// ==========================================
 @Composable
 fun LoginScreen(
     viewModel: UserViewModel,
@@ -25,6 +28,9 @@ fun LoginScreen(
     onNavigateToSignUp: () -> Unit,
     onNavigateToForgotPassword: () -> Unit
 ) {
+    // ------------------------------------------
+    // Estado y Validación del Formulario de Inicio de Sesión
+    // ------------------------------------------
     var run by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
@@ -40,6 +46,9 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // ------------------------------------------
+        // Identidad Visual y Bienvenida
+        // ------------------------------------------
         Image(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo Sanaesencia",
@@ -54,6 +63,9 @@ fun LoginScreen(
         )
         Spacer(modifier = Modifier.height(24.dp))
 
+        // ------------------------------------------
+        // Campos de Entrada: RUN / Usuario y Contraseña
+        // ------------------------------------------
         OutlinedTextField(
             value = run,
             onValueChange = {
@@ -124,6 +136,9 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // ------------------------------------------
+        // Botón Principal de Envío / Inicio de Sesión
+        // ------------------------------------------
         Button(
             onClick = {
                 viewModel.login(run, password) { user ->
@@ -142,6 +157,9 @@ fun LoginScreen(
             Text("Ingresar")
         }
 
+        // ------------------------------------------
+        // Enlaces de Navegación a Recuperación y Registro
+        // ------------------------------------------
         Spacer(modifier = Modifier.height(16.dp))
         TextButton(onClick = onNavigateToForgotPassword) {
             Text("¿Olvidaste tu contraseña?")

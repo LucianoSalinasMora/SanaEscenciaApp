@@ -15,11 +15,17 @@ import com.sanaesencia.app.viewmodel.BookingViewModel
 import com.sanaesencia.app.viewmodel.UserViewModel
 import java.time.LocalDate
 
+// ==========================================
+// Pantalla de Turnos y Citas del Profesional Conectado
+// ==========================================
 @Composable
 fun MyScheduleScreen(
     bookingViewModel: BookingViewModel,
     userViewModel: UserViewModel
 ) {
+    // ------------------------------------------
+    // Observación y Filtrado de Citas Asignadas al Profesional
+    // ------------------------------------------
     val allAppointments by bookingViewModel.appointments.collectAsState()
     val currentUser by userViewModel.currentUser.collectAsState()
 

@@ -15,6 +15,9 @@ import com.sanaesencia.app.data.UserRole
 import com.sanaesencia.app.data.Validators
 import com.sanaesencia.app.viewmodel.UserViewModel
 
+// ==========================================
+// Pantalla de Registro de Nuevos Pacientes
+// ==========================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
@@ -22,6 +25,9 @@ fun SignUpScreen(
     onRegisterSuccess: () -> Unit,
     onBack: () -> Unit
 ) {
+    // ------------------------------------------
+    // Estados y Validaciones del Formulario de Registro
+    // ------------------------------------------
     var run by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -44,6 +50,7 @@ fun SignUpScreen(
             password.isNotBlank() && isPasswordValid &&
             securityQuestion.isNotBlank() &&
             securityAnswer.isNotBlank() && isSecurityAnswerValid
+
 
     Scaffold(
         topBar = {

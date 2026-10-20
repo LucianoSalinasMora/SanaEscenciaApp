@@ -21,12 +21,18 @@ import com.sanaesencia.app.data.UserRole
 import com.sanaesencia.app.data.Validators
 import com.sanaesencia.app.viewmodel.UserViewModel
 
+// ==========================================
+// Pantalla de Administración y Gestión de Profesionales
+// ==========================================
 @Composable
 fun AdminProfessionalsScreen(viewModel: UserViewModel) {
     val dbProfessionals by viewModel.professionals.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var editingProfessional by remember { mutableStateOf<UserEntity?>(null) }
 
+    // ------------------------------------------
+    // Encabezado y Botón de Nuevo Profesional
+    // ------------------------------------------
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -51,6 +57,9 @@ fun AdminProfessionalsScreen(viewModel: UserViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // ------------------------------------------
+        // Lista de Tarjetas de Profesionales o Estado Vacío
+        // ------------------------------------------
         if (dbProfessionals.isEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -102,6 +111,9 @@ fun AdminProfessionalsScreen(viewModel: UserViewModel) {
         }
     }
 
+    // ------------------------------------------
+    // Diálogo Modal para Crear o Editar Profesional
+    // ------------------------------------------
     if (showDialog) {
         AddOrEditProfessionalDialog(
             professionalToEdit = editingProfessional,
@@ -115,6 +127,9 @@ fun AdminProfessionalsScreen(viewModel: UserViewModel) {
     }
 }
 
+// ==========================================
+// Diálogo de Formulario: Agregar o Editar Profesional
+// ==========================================
 @Composable
 fun AddOrEditProfessionalDialog(
     professionalToEdit: UserEntity?,

@@ -15,8 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sanaesencia.app.viewmodel.BookingViewModel
 
+// ==========================================
+// Pantalla de Pacientes Agendados (Vista Profesional)
+// ==========================================
 @Composable
 fun MyPatientsScreen(bookingViewModel: BookingViewModel) {
+    // ------------------------------------------
+    // Observación de Citas de Pacientes
+    // ------------------------------------------
     val appointments by bookingViewModel.appointments.collectAsState()
 
     Column(

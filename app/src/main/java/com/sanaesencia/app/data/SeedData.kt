@@ -1,11 +1,17 @@
 package com.sanaesencia.app.data
 
+// ==========================================
+// Constantes de Contacto Institucional para Datos Semilla
+// ==========================================
 // Profesionales publicados en centrosanaesencia.cl (solo nombre y especialidad).
 // Los dos "de Ejemplo" son ficticios, para cubrir áreas del caso que no aparecen en la web.
 // Los RUN y las contraseñas son de prueba; el correo y teléfono son los de contacto del centro.
 private const val CONTACT_EMAIL = "contacto@centrosanaesencia.cl"
 private const val CONTACT_PHONE = "+56923665073"
 
+// ==========================================
+// Función Auxiliar para Creación de Profesionales
+// ==========================================
 private fun pro(run: String, name: String, specialty: String) = UserEntity(
     run = run,
     name = name,
@@ -18,6 +24,9 @@ private fun pro(run: String, name: String, specialty: String) = UserEntity(
     specialty = specialty
 )
 
+// ==========================================
+// Lista Inicial de Usuarios y Profesionales del Sistema
+// ==========================================
 val seedUsers: List<UserEntity> = listOf(
     pro("20000001-3", "Dra. Keilen Sánchez Ríos", "Medicina General y Salud Mental"),
     pro("20000002-1", "Dra. Camila Tabilo", "Medicina General y Salud Mental"),
